@@ -1,14 +1,19 @@
+import os
 from typing import Optional
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 from app.controllers.document_controller import DocumentController
 from app.db.session import get_db
+from app.interfaces.s3_interface import S3Interface
 from app.schemas.document_schemas import UploadDocumentRequest
 
 router = APIRouter()
 
-def get_document_controller() -> DocumentController:
-    return DocumentController()
+def get_s3_interface() -> S3Interface:
+    return S3Interface(os.getenv("S3_BUCKET_NAME"))
+
+def get_document_controller(s3_interface: S3Interface = Depends(get_s3_interface)) -> DocumentController:
+    return DocumentController(s3_interface)
 
 @router.post("/upload-document")
 async def upload_document(
