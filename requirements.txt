@@ -6,3 +6,6 @@ python-dotenv
 alembic
 python-multipart
 boto3
+keybert
+sentence-transformers
+PyPDF2

@@ -1,5 +1,7 @@
 from fastapi import HTTPException
 
+from app.utils.document_utils import extract_tags, extract_text_from_pdf
+
 
 class DocumentController:
     def __init__(self, s3_interface, document_interface):
@@ -29,6 +31,13 @@ class DocumentController:
             file.file.seek(0)
             # Pass the file content to upload_file
             s3_url = self.s3_interface.upload_file(file_content, document_input.filename)
+            # TODO: only allow tagging on pdf for now
+            text_from_pdf = extract_text_from_pdf(file_content)
+            tags = extract_tags(text_from_pdf)
+            return tags
+
+
+
             # Create a document record in the database
             document = self.document_interface.create_document(
                 filename=document_input.filename,
