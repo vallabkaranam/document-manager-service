@@ -2,8 +2,9 @@ from fastapi import HTTPException
 
 
 class DocumentController:
-    def __init__(self, s3_interface):
+    def __init__(self, s3_interface, document_interface):
         self.s3_interface = s3_interface
+        self.document_interface = document_interface
 
     # ✅ 2. Document Upload API
     # Endpoint: POST /documents/
@@ -27,9 +28,14 @@ class DocumentController:
             # Reset the file pointer to the beginning
             file.file.seek(0)
             # Pass the file content to upload_file
-            url = self.s3_interface.upload_file(file_content, document_input.filename)
-            return url
-            
+            s3_url = self.s3_interface.upload_file(file_content, document_input.filename)
+            # Create a document record in the database
+            document = self.document_interface.create_document(
+                filename=document_input.filename,
+                s3_url=s3_url,
+                description=document_input.description
+            )
+            return document
         except HTTPException as e:
             raise e
         except Exception as e:
@@ -37,10 +43,6 @@ class DocumentController:
                 status_code=500,
                 detail=f"S3 upload error: {str(e)}"
             )
-
-
-
-        return file, document_input
 
 
 
