@@ -38,6 +38,7 @@ class DocumentController:
             document = self.document_interface.create_document(
                 filename=document_input.filename,
                 s3_url=s3_url,
+                content_type=file.content_type,
                 description=document_input.description
             )
 
@@ -111,7 +112,7 @@ class DocumentController:
         except HTTPException as e:
             raise e
         except Exception as e:
-            HTTPException(
+            raise HTTPException(
                 status_code=500,
                 detail=f"Error getting document by user id: {str(e)}"
             )
