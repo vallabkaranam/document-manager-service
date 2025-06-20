@@ -12,5 +12,6 @@ class DocumentTag(Base):
     tag_id = Column(UUID(as_uuid=True), ForeignKey("tags.id"), primary_key=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    document = relationship("Document", back_populates="document_tags")
-    tag = relationship("Tag", back_populates="document_tags")
+    # Relationships
+    document = relationship("Document", back_populates="document_tags", overlaps="tags,documents")
+    tag = relationship("Tag", back_populates="document_tags", overlaps="tags,documents")

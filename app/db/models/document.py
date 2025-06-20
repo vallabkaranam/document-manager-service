@@ -1,5 +1,3 @@
-# app/models/document.py
-
 from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
@@ -19,6 +17,6 @@ class Document(Base):
     description = Column(String, nullable=True)
     user_id = Column(Integer, nullable=False, index=True)
 
-    # Relationship to DocumentTag
+    # Relationships
     document_tags = relationship("DocumentTag", back_populates="document", cascade="all, delete-orphan")
-    tags = relationship("Tag", secondary="document_tags", back_populates="documents")
+    tags = relationship("Tag", secondary="document_tags", back_populates="documents", overlaps="document_tags,tag")

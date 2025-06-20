@@ -14,6 +14,6 @@ class Tag(Base):
     text = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # Relationship to DocumentTag
+    # Relationships
     document_tags = relationship("DocumentTag", back_populates="tag", cascade="all, delete-orphan")
-    documents = relationship("Document", secondary="document_tags", back_populates="tags")
+    documents = relationship("Document", secondary="document_tags", back_populates="tags", overlaps="document_tags,tag")
