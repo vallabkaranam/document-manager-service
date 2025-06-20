@@ -8,8 +8,8 @@ from app.db.base import Base
 class DocumentTag(Base):
     __tablename__ = "document_tags"
 
-    document_id = Column(UUID(as_uuid=True), ForeignKey("documents.id"), primary_key=True)
-    tag_id = Column(UUID(as_uuid=True), ForeignKey("tags.id"), primary_key=True)
+    document_id = Column(UUID(as_uuid=True), ForeignKey("documents.id", ondelete="CASCADE"), primary_key=True)
+    tag_id = Column(UUID(as_uuid=True), ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
