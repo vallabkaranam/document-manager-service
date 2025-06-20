@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from sentence_transformers import util
 from app.ml_models.embedding_models import shared_sentence_model
 
-from app.schemas.document_schemas import Document, Tag, UploadDocumentResponse
+from app.schemas.document_schemas import Document, Tag
 from app.utils.document_utils import extract_tags, extract_text_from_pdf
 
 
@@ -95,11 +95,7 @@ class DocumentController:
 
             tags_response = [Tag(id=tag.id, text=tag.text, created_at=tag.created_at) for tag in associated_tags]
         
-
-            return UploadDocumentResponse(
-                document=document_response,
-                tags=tags_response
-            )
+            return document_response,tags_response
 
         except HTTPException as e:
             raise e
@@ -108,3 +104,17 @@ class DocumentController:
                 status_code=500,
                 detail=f"S3 upload error: {str(e)}"
             )
+    
+    def get_documents_by_user_id(self, user_id):
+        try:
+            return self.document_interface.get_documents_by_user_id(user_id)
+        
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            HTTPException(
+                status_code=500,
+                detail=f'Error getting document by user id: {str(e)}'
+            )
+        
+        

@@ -6,7 +6,7 @@ from app.controllers.document_controller import DocumentController
 from app.db.session import get_db
 from app.interfaces.s3_interface import S3Interface
 from app.interfaces.document_interface import DocumentInterface
-from app.schemas.document_schemas import UploadDocumentRequest, UploadDocumentResponse
+from app.schemas.document_schemas import DocumentsResponse, UploadDocumentRequest, UploadDocumentResponse
 
 router = APIRouter()
 
@@ -22,6 +22,20 @@ def get_document_controller(
 ) -> DocumentController:
     return DocumentController(s3_interface, document_interface)
 
+@router.get("/documents")
+async def get_documents_by_user_id(user_id: int, document_controller: DocumentController = Depends(get_document_controller)) -> DocumentsResponse:
+    try:
+        documents = document_controller.get_documents_by_user_id(user_id)
+        return DocumentsResponse(documents=documents)
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail='Unable to get documents by user id'
+        )
+
 @router.post("/upload-document")
 async def upload_document(
     file: UploadFile = File(...),
@@ -31,7 +45,11 @@ async def upload_document(
 ) -> UploadDocumentResponse:
     request = UploadDocumentRequest(filename=filename, description=description)
     try:
-        return document_controller.upload_document(file, request)
+        document, tags = document_controller.upload_document(file, request)
+        return UploadDocumentResponse(
+            document=document,
+            tags=tags
+        )
     
     except HTTPException as e:
         raise e

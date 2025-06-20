@@ -2,6 +2,7 @@ from typing import List
 from sqlalchemy.orm import Session
 from app.db.models.document import Document
 from app.db.models.document_tag import DocumentTag
+from app.schemas.document_schemas import Document as DocumentPydantic
 from app.db.models.tag import Tag
 
 class DocumentInterface:
@@ -24,6 +25,20 @@ class DocumentInterface:
         self.db.refresh(document)
         return document 
     
+    def get_documents_by_user_id(self, user_id: int) -> List[DocumentPydantic]:
+        documents_from_db = self.db.query(Document).filter(Document.user_id == user_id).all()
+        return [
+            DocumentPydantic(
+                id=document.id,
+                filename=document.filename,
+                storage_path=document.storage_path,
+                upload_time=document.upload_time,
+                description=document.description,
+                user_id=document.user_id
+                )
+            for document in documents_from_db
+        ]
+
     def get_all_tags(self) -> List[Tag]:
         return self.db.query(Tag).all()
 

@@ -30,3 +30,6 @@ class Tag(BaseModel):
 class UploadDocumentResponse(BaseModel):
     document: Document
     tags: List[Tag]
+
+class DocumentsResponse(BaseModel):
+    documents: List[Document]
