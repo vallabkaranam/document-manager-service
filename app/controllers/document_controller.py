@@ -41,47 +41,58 @@ class DocumentController:
                 description=document_input.description
             )
 
-            # TODO: only allow tagging on pdf for now
-            text_from_pdf = extract_text_from_pdf(file_content)
-            tags = extract_tags(text_from_pdf)
+            # Only perform auto-tagging for PDF files
+            if file.content_type == "application/pdf":
+                # TODO: only allow tagging on pdf for now
+                # Note: Currently, auto-tagging is limited to PDF files because:
+                # 1. extract_text_from_pdf() function only handles PDF extraction
+                # 2. To support other file types (images, Word docs, etc.), we would need:
+                #    - OCR capabilities for images (e.g., using pytesseract)
+                #    - Text extraction for Word docs (e.g., using python-docx)
+                #    - A more generic text extraction function that detects file type
+                text_from_pdf = extract_text_from_pdf(file_content)
+                tags = extract_tags(text_from_pdf)
 
-            # Fetch existing tags from DB
-            existing_tags = self.document_interface.get_all_tags()
-            existing_texts = [tag.text for tag in existing_tags]
+                # Fetch existing tags from DB
+                existing_tags = self.document_interface.get_all_tags()
+                existing_texts = [tag.text for tag in existing_tags]
 
-            # tags (existing and new) associated with current document
-            associated_tags = []
-            associated_tag_ids = set()
+                # tags (existing and new) associated with current document
+                associated_tags = []
+                associated_tag_ids = set()
 
-            # Encode existing tags only once
-            if existing_texts:
-                existing_embeddings = self.model.encode(existing_texts, convert_to_tensor=True)
-
-            for tag_text in tags:
-                matched_tag = None
-
-                # find if there is an existing_tag that semantically is similar to the tag
+                # Encode existing tags only once
                 if existing_texts:
-                    query_embedding = self.model.encode(tag_text, convert_to_tensor=True)
-                    scores = util.pytorch_cos_sim(query_embedding, existing_embeddings)[0]
-                    best_idx = scores.argmax().item()
-                    best_score = scores[best_idx].item()
-                    if best_score >= 0.5:
-                        matched_tag = existing_tags[best_idx]
+                    existing_embeddings = self.model.encode(existing_texts, convert_to_tensor=True)
 
-                # if so, then use the matched_tag
-                if matched_tag:
-                    tag_obj = matched_tag
-                else:
-                    # if not then create new tag
-                    tag_obj = self.document_interface.create_tag(tag_text)
+                for tag_text in tags:
+                    matched_tag = None
 
-                # Avoid duplicate links
-                if tag_obj.id not in associated_tag_ids:
-                    # Link tag to document
-                    self.document_interface.link_document_tag(document.id, tag_obj.id)
-                    associated_tags.append(tag_obj)
-                    associated_tag_ids.add(tag_obj.id)
+                    # find if there is an existing_tag that semantically is similar to the tag
+                    if existing_texts:
+                        query_embedding = self.model.encode(tag_text, convert_to_tensor=True)
+                        scores = util.pytorch_cos_sim(query_embedding, existing_embeddings)[0]
+                        best_idx = scores.argmax().item()
+                        best_score = scores[best_idx].item()
+                        if best_score >= 0.5:
+                            matched_tag = existing_tags[best_idx]
+
+                    # if so, then use the matched_tag
+                    if matched_tag:
+                        tag_obj = matched_tag
+                    else:
+                        # if not then create new tag
+                        tag_obj = self.document_interface.create_tag(tag_text)
+
+                    # Avoid duplicate links
+                    if tag_obj.id not in associated_tag_ids:
+                        # Link tag to document
+                        self.document_interface.link_document_tag(document.id, tag_obj.id)
+                        associated_tags.append(tag_obj)
+                        associated_tag_ids.add(tag_obj.id)
+            else:
+                # For non-PDF files, return empty list of tags
+                associated_tags = []
         
             return document,associated_tags
 
