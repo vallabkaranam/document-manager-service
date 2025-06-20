@@ -1,16 +1,13 @@
-from keybert import KeyBERT
+from app.ml_models.embedding_models import shared_keybert_model
 from typing import List
 from PyPDF2 import PdfReader
 import io
-
-# Load KeyBERT model once at the module level
-model = KeyBERT(model='all-MiniLM-L6-v2')
 
 def extract_tags(text: str, num_tags: int = 5) -> List[str]:
     if not text or text.strip() == "":
         return []
 
-    keywords = model.extract_keywords(
+    keywords = shared_keybert_model.extract_keywords(
         text,
         keyphrase_ngram_range=(1, 2),
         stop_words='english',
