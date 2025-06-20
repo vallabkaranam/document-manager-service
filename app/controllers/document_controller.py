@@ -6,7 +6,6 @@ from app.schemas.document_schemas import Document, Tag, UploadDocumentResponse
 from app.utils.document_utils import extract_tags, extract_text_from_pdf
 
 
-
 class DocumentController:
     def __init__(self, s3_interface, document_interface):
         self.s3_interface = s3_interface
@@ -53,6 +52,7 @@ class DocumentController:
 
             # tags (existing and new) associated with current document
             associated_tags = []
+            associated_tag_ids = set()
 
             # Encode existing tags only once
             if existing_texts:
@@ -67,7 +67,7 @@ class DocumentController:
                     scores = util.pytorch_cos_sim(query_embedding, existing_embeddings)[0]
                     best_idx = scores.argmax().item()
                     best_score = scores[best_idx].item()
-                    if best_score >= 0.8:
+                    if best_score >= 0.5:
                         matched_tag = existing_tags[best_idx]
 
                 # if so, then use the matched_tag
@@ -76,11 +76,13 @@ class DocumentController:
                 else:
                     # if not then create new tag
                     tag_obj = self.document_interface.create_tag(tag_text)
-                
-                associated_tags.append(tag_obj)
 
-                # Link tag to document
-                self.document_interface.link_document_tag(document.id, tag_obj.id)
+                # Avoid duplicate links
+                if tag_obj.id not in associated_tag_ids:
+                    # Link tag to document
+                    self.document_interface.link_document_tag(document.id, tag_obj.id)
+                    associated_tags.append(tag_obj)
+                    associated_tag_ids.add(tag_obj.id)
 
             document_response = Document(
                 id=document.id,
