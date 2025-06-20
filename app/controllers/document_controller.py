@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from sentence_transformers import util
 from app.ml_models.embedding_models import shared_sentence_model
 
-from app.utils.document_utils import extract_tags, extract_text_from_pdf
+from app.utils.document_utils import extract_tags, extract_text_from_pdf, generate_unique_filename
 
 
 class DocumentController:
@@ -31,8 +31,13 @@ class DocumentController:
             # Reset the file pointer to the beginning
             file.file.seek(0)
 
+            # Choose filename: use custom filename if provided, otherwise use original filename
+            chosen_filename = document_input.filename or file.filename
+            # Generate unique filename before uploading
+            unique_filename = generate_unique_filename(chosen_filename)
+            
             # Pass the file content to upload_file
-            s3_url = self.s3_interface.upload_file(file_content, document_input.filename)
+            s3_url = self.s3_interface.upload_file(file_content, unique_filename)
 
             # Create a document record in the database
             document = self.document_interface.create_document(
