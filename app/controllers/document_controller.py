@@ -2,7 +2,6 @@ from fastapi import HTTPException
 from sentence_transformers import util
 from app.ml_models.embedding_models import shared_sentence_model
 
-from app.schemas.document_schemas import Document, Tag
 from app.utils.document_utils import extract_tags, extract_text_from_pdf
 
 
@@ -83,19 +82,8 @@ class DocumentController:
                     self.document_interface.link_document_tag(document.id, tag_obj.id)
                     associated_tags.append(tag_obj)
                     associated_tag_ids.add(tag_obj.id)
-
-            document_response = Document(
-                id=document.id,
-                filename=document.filename,
-                storage_path=document.storage_path,
-                upload_time=document.upload_time,
-                description=document.description,
-                user_id=document.user_id
-            )
-
-            tags_response = [Tag(id=tag.id, text=tag.text, created_at=tag.created_at) for tag in associated_tags]
         
-            return document_response,tags_response
+            return document,associated_tags
 
         except HTTPException as e:
             raise e
@@ -114,7 +102,7 @@ class DocumentController:
         except Exception as e:
             HTTPException(
                 status_code=500,
-                detail=f'Error getting document by user id: {str(e)}'
+                detail=f"Error getting document by user id: {str(e)}"
             )
         
         

@@ -33,7 +33,7 @@ async def get_documents_by_user_id(user_id: int, document_controller: DocumentCo
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail='Unable to get documents by user id'
+            detail=f"Unable to get documents by user id: {str(e)}"
         )
 
 @router.post("/upload-document")
@@ -44,6 +44,7 @@ async def upload_document(
     document_controller: DocumentController = Depends(get_document_controller)
 ) -> UploadDocumentResponse:
     request = UploadDocumentRequest(filename=filename, description=description)
+    
     try:
         document, tags = document_controller.upload_document(file, request)
         return UploadDocumentResponse(
