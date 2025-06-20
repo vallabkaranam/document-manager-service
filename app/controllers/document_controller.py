@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from sentence_transformers import util
 from app.ml_models.embedding_models import shared_sentence_model
 
+from app.schemas.document_schemas import Document, Tag, UploadDocumentResponse
 from app.utils.document_utils import extract_tags, extract_text_from_pdf
 
 
@@ -25,8 +26,7 @@ class DocumentController:
     def upload_document(self, file, document_input):
         # Accepts: file upload (PDF, image, etc.), optional description
 
-        # Stores file in S3 or local /uploads/ directory
-        print(document_input.filename)
+        # Stores file in S3
         try:
             # Read the file content from the UploadFile object
             file_content = file.file.read()
@@ -51,6 +51,9 @@ class DocumentController:
             existing_tags = self.document_interface.get_all_tags()
             existing_texts = [tag.text for tag in existing_tags]
 
+            # tags (existing and new) associated with current document
+            associated_tags = []
+
             # Encode existing tags only once
             if existing_texts:
                 existing_embeddings = self.model.encode(existing_texts, convert_to_tensor=True)
@@ -73,11 +76,28 @@ class DocumentController:
                 else:
                     # if not then create new tag
                     tag_obj = self.document_interface.create_tag(tag_text)
+                
+                associated_tags.append(tag_obj)
 
                 # Link tag to document
                 self.document_interface.link_document_tag(document.id, tag_obj.id)
 
-            return document
+            document_response = Document(
+                id=document.id,
+                filename=document.filename,
+                storage_path=document.storage_path,
+                upload_time=document.upload_time,
+                description=document.description,
+                user_id=document.user_id
+            )
+
+            tags_response = [Tag(id=tag.id, text=tag.text, created_at=tag.created_at) for tag in associated_tags]
+        
+
+            return UploadDocumentResponse(
+                document=document_response,
+                tags=tags_response
+            )
 
         except HTTPException as e:
             raise e

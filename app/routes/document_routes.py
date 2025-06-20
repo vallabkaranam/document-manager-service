@@ -6,7 +6,7 @@ from app.controllers.document_controller import DocumentController
 from app.db.session import get_db
 from app.interfaces.s3_interface import S3Interface
 from app.interfaces.document_interface import DocumentInterface
-from app.schemas.document_schemas import UploadDocumentRequest
+from app.schemas.document_schemas import UploadDocumentRequest, UploadDocumentResponse
 
 router = APIRouter()
 
@@ -28,10 +28,11 @@ async def upload_document(
     filename: Optional[str] = Form(None),
     description: Optional[str] = Form(None),
     document_controller: DocumentController = Depends(get_document_controller)
-):
+) -> UploadDocumentResponse:
     request = UploadDocumentRequest(filename=filename, description=description)
     try:
         return document_controller.upload_document(file, request)
+    
     except HTTPException as e:
         raise e
     except Exception as e:
