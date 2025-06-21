@@ -13,6 +13,7 @@ class Document(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     filename = Column(String, nullable=False)
     content_type = Column(String, nullable=False)
+    size = Column(Integer, nullable=False)
     storage_path = Column(String, nullable=False)
     upload_time = Column(DateTime(timezone=True), server_default=func.now())
     description = Column(String, nullable=True)
