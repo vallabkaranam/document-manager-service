@@ -10,8 +10,8 @@ class DocumentInterface:
         self.db = db
 
     def create_document(self, 
-                        filename: str, 
                         s3_url: str, 
+                        filename: Optional[str] = 'Untitled',
                         content_type: Optional[str] = 'unknown', 
                         size: Optional[int] = 0,
                         description: Optional[str] = None

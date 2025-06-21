@@ -41,8 +41,8 @@ class DocumentController:
 
             # Create a document record in the database
             document = self.document_interface.create_document(
-                filename=document_input.filename,
                 s3_url=s3_url,
+                filename=document_input.filename or file.filename,
                 content_type=file.content_type,
                 size=file.size,
                 description=document_input.description
