@@ -44,6 +44,7 @@ class DocumentController:
                 filename=document_input.filename,
                 s3_url=s3_url,
                 content_type=file.content_type,
+                size=file.size,
                 description=document_input.description
             )
 

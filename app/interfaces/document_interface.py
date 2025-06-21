@@ -9,14 +9,21 @@ class DocumentInterface:
     def __init__(self, db: Session):
         self.db = db
 
-    def create_document(self, filename: str, s3_url: str, content_type: Optional[str] = None, description: Optional[str] = None) -> DocumentPydantic:
+    def create_document(self, 
+                        filename: str, 
+                        s3_url: str, 
+                        content_type: Optional[str] = 'unknown', 
+                        size: Optional[int] = 0,
+                        description: Optional[str] = None
+                        ) -> DocumentPydantic:
         """
         Creates a new document record in the database.
         """
         document = Document(
             filename=filename,
             storage_path=s3_url,
-            content_type=content_type or 'unknown',
+            content_type=content_type,
+            size=size,
             description=description,
             user_id=1 # TODO: Hardcoding the user_id here until we hook up to user-service
         )
@@ -30,6 +37,7 @@ class DocumentInterface:
             filename=document.filename,
             storage_path=document.storage_path,
             content_type=document.content_type,
+            size=document.size,
             upload_time=document.upload_time,
             description=document.description,
             user_id=document.user_id
@@ -43,6 +51,7 @@ class DocumentInterface:
                 filename=document.filename,
                 storage_path=document.storage_path,
                 content_type=document.content_type,
+                size=document.size,
                 upload_time=document.upload_time,
                 description=document.description,
                 user_id=document.user_id

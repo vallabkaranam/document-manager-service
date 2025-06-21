@@ -19,6 +19,7 @@ class Document(BaseModel):
     filename: str
     storage_path: str
     content_type: str
+    size: int
     upload_time: datetime
     description: Optional[str] = None
     user_id: int
