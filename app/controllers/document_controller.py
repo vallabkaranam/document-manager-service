@@ -6,8 +6,9 @@ from app.utils.document_utils import extract_tags, extract_text_from_pdf, genera
 
 
 class DocumentController:
-    def __init__(self, s3_interface, document_interface):
+    def __init__(self, s3_interface, queue_interface, document_interface):
         self.s3_interface = s3_interface
+        self.queue_interface = queue_interface
         self.document_interface = document_interface
         self.model = shared_sentence_model
 
@@ -48,60 +49,15 @@ class DocumentController:
                 description=document_input.description
             )
 
-            # Only perform auto-tagging for PDF files
-            if file.content_type == "application/pdf":
-                # TODO: only allow tagging on pdf for now
-                # Note: Currently, auto-tagging is limited to PDF files because:
-                # 1. extract_text_from_pdf() function only handles PDF extraction
-                # 2. To support other file types (images, Word docs, etc.), we would need:
-                #    - OCR capabilities for images (e.g., using pytesseract)
-                #    - Text extraction for Word docs (e.g., using python-docx)
-                #    - A more generic text extraction function that detects file type
-                text_from_pdf = extract_text_from_pdf(file_content)
-                tags = extract_tags(text_from_pdf)
+            # Send message to queue for async processing
+            self.queue_interface.send_document_tagging_message(
+                document_id=document.id,
+                s3_url=document.storage_path,
+                content_type=document.content_type
+            )
 
-                # Fetch existing tags from DB
-                existing_tags = self.document_interface.get_all_tags()
-                existing_texts = [tag.text for tag in existing_tags]
-
-                # tags (existing and new) associated with current document
-                associated_tags = []
-                associated_tag_ids = set()
-
-                # Encode existing tags only once
-                if existing_texts:
-                    existing_embeddings = self.model.encode(existing_texts, convert_to_tensor=True)
-
-                for tag_text in tags:
-                    matched_tag = None
-
-                    # find if there is an existing_tag that semantically is similar to the tag
-                    if existing_texts:
-                        query_embedding = self.model.encode(tag_text, convert_to_tensor=True)
-                        scores = util.pytorch_cos_sim(query_embedding, existing_embeddings)[0]
-                        best_idx = scores.argmax().item()
-                        best_score = scores[best_idx].item()
-                        if best_score >= 0.5:
-                            matched_tag = existing_tags[best_idx]
-
-                    # if so, then use the matched_tag
-                    if matched_tag:
-                        tag_obj = matched_tag
-                    else:
-                        # if not then create new tag
-                        tag_obj = self.document_interface.create_tag(tag_text)
-
-                    # Avoid duplicate links
-                    if tag_obj.id not in associated_tag_ids:
-                        # Link tag to document
-                        self.document_interface.link_document_tag(document.id, tag_obj.id)
-                        associated_tags.append(tag_obj)
-                        associated_tag_ids.add(tag_obj.id)
-            else:
-                # For non-PDF files, return empty list of tags
-                associated_tags = []
-        
-            return document,associated_tags
+            # Instead of waiting for tagging, return early        
+            return document, [] # TODO: add a tag_creation_status field for document
 
         except HTTPException as e:
             raise e

@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 from app.controllers.document_controller import DocumentController
 from app.db.session import get_db
+from app.interfaces.queue_interface import QueueInterface
 from app.interfaces.s3_interface import S3Interface
 from app.interfaces.document_interface import DocumentInterface
 from app.schemas.document_schemas import DocumentsResponse, UploadDocumentRequest, UploadDocumentResponse
@@ -13,14 +14,18 @@ router = APIRouter()
 def get_s3_interface() -> S3Interface:
     return S3Interface(os.getenv("S3_BUCKET_NAME"))
 
+def get_queue_interface() -> QueueInterface:
+    return QueueInterface(os.getenv("SQS_QUEUE_URL"))
+
 def get_document_interface(db: Session = Depends(get_db)) -> DocumentInterface:
     return DocumentInterface(db)
 
 def get_document_controller(
     s3_interface: S3Interface = Depends(get_s3_interface),
+    queue_interface: QueueInterface = Depends(get_queue_interface),
     document_interface: DocumentInterface = Depends(get_document_interface)
 ) -> DocumentController:
-    return DocumentController(s3_interface, document_interface)
+    return DocumentController(s3_interface, queue_interface, document_interface)
 
 @router.get("/documents")
 async def get_documents_by_user_id(user_id: int, document_controller: DocumentController = Depends(get_document_controller)) -> DocumentsResponse:
