@@ -1,3 +1,4 @@
+from urllib.parse import urlparse
 import boto3
 from botocore.exceptions import NoCredentialsError, ClientError
 import os
@@ -35,8 +36,20 @@ class S3Interface:
             os.remove(tmp_file_path)
 
             # Return the correct S3 URL format
-            region = os.getenv('AWS_REGION', 'us-east-1')
-            s3_url = f'https://{self.bucket_name}.s3.{region}.amazonaws.com/{filename}'
-            return s3_url
+            return f"s3://{self.bucket_name}/{filename}"
         except (NoCredentialsError, ClientError) as e:
             raise Exception(f"S3 upload failed: {e}") 
+        
+    def download_file(self, s3_url: str) -> bytes:
+        parsed = urlparse(s3_url)
+
+        bucket = parsed.netloc          # "my-bucket"
+        key = parsed.path.lstrip("/")   # "folder/filename.pdf"
+
+        try:
+            response = self.s3_client.get_object(Bucket=bucket, Key=key)
+            return response["Body"].read()
+        except self.s3_client.exceptions.NoSuchKey:
+            raise Exception(f"The key '{key}' does not exist in bucket '{bucket}'.")
+        except (NoCredentialsError, ClientError) as e:
+            raise Exception(f"S3 download failed: {e}")
