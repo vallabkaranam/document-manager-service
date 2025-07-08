@@ -27,7 +27,7 @@ class Document(Base):
     description = Column(String, nullable=True)
     user_id = Column(Integer, nullable=False, index=True)
     tag_status = Column(Enum(TagStatusEnum), nullable=False, default=TagStatusEnum.pending)
-    tag_status_updated_at = Column(DateTime(timezone=True), nullable=True)
+    tag_status_updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     # Relationships
     document_tags = relationship("DocumentTag", back_populates="document", cascade="all, delete-orphan")
