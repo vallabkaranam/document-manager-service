@@ -22,6 +22,7 @@ class Document(BaseModel):
     content_type: str
     size: int
     upload_time: datetime
+    updated_at: datetime
     description: Optional[str] = None
     user_id: int
     tag_status: TagStatusEnum
@@ -47,3 +48,4 @@ class DocumentUpdate(BaseModel):
     user_id: Optional[int] = None
     tag_status: Optional[TagStatusEnum] = None
     tag_status_updated_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None

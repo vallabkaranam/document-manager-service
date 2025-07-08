@@ -41,6 +41,7 @@ class DocumentInterface:
             content_type=document.content_type,
             size=document.size,
             upload_time=document.upload_time,
+            updated_at=document.updated_at,
             description=document.description,
             user_id=document.user_id,
             tag_status=document.tag_status,
@@ -57,11 +58,12 @@ class DocumentInterface:
                 content_type=document.content_type,
                 size=document.size,
                 upload_time=document.upload_time,
+                updated_at=document.updated_at,
                 description=document.description,
                 user_id=document.user_id,
                 tag_status=document.tag_status,
                 tag_status_updated_at=document.tag_status_updated_at
-                )
+            )
             for document in documents_from_db
         ]
     
@@ -78,6 +80,7 @@ class DocumentInterface:
             content_type=document_from_db.content_type,
             size=document_from_db.size,
             upload_time=document_from_db.upload_time,
+            updated_at=document_from_db.updated_at,
             description=document_from_db.description,
             user_id=document_from_db.user_id,
             tag_status=document_from_db.tag_status,
@@ -91,6 +94,7 @@ class DocumentInterface:
             raise Exception(f"Document with id {document_id} not found")
         for field, value in update_data.dict(exclude_unset=True).items():
             setattr(document, field, value)
+        document.updated_at = datetime.now(timezone.utc)
         self.db.commit()
         self.db.refresh(document)
         return DocumentPydantic(
@@ -100,6 +104,7 @@ class DocumentInterface:
             content_type=document.content_type,
             size=document.size,
             upload_time=document.upload_time,
+            updated_at=document.updated_at,
             description=document.description,
             user_id=document.user_id,
             tag_status=document.tag_status,
