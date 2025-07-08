@@ -58,7 +58,7 @@ class DocumentController:
             )
 
             # Instead of waiting for tagging, return early        
-            return document, [] # TODO: add a tag_creation_status field for document
+            return document
 
         except HTTPException as e:
             raise e

@@ -7,7 +7,7 @@ from app.db.session import get_db
 from app.interfaces.queue_interface import QueueInterface
 from app.interfaces.s3_interface import S3Interface
 from app.interfaces.document_interface import DocumentInterface
-from app.schemas.document_schemas import Document, DocumentsResponse, UploadDocumentRequest, UploadDocumentResponse, DocumentUpdate
+from app.schemas.document_schemas import Document, DocumentsResponse, UploadDocumentRequest, DocumentUpdate
 
 router = APIRouter()
 
@@ -68,21 +68,18 @@ async def view_document_by_id(document_id: str, document_controller: DocumentCon
             detail=f"Unable to get document by id: {str(e)}"
         )
 
-@router.post("/upload-document")
+@router.post("/upload-document", response_model=Document)
 async def upload_document(
     file: UploadFile = File(...),
     filename: Optional[str] = Form(None),
     description: Optional[str] = Form(None),
     document_controller: DocumentController = Depends(get_document_controller)
-) -> UploadDocumentResponse:
+) -> Document:
     request = UploadDocumentRequest(filename=filename, description=description)
     
     try:
-        document, tags = document_controller.upload_document(file, request)
-        return UploadDocumentResponse(
-            document=document,
-            tags=tags
-        )
+        document = document_controller.upload_document(file, request)
+        return document
     
     except HTTPException as e:
         raise e
