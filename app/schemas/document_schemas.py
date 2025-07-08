@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 from uuid import UUID
 
+from app.db.models.document import TagStatusEnum
 
 class UploadDocumentRequest(BaseModel):
     filename: Optional[str] = Field(
@@ -23,7 +24,8 @@ class Document(BaseModel):
     upload_time: datetime
     description: Optional[str] = None
     user_id: int
-
+    tag_status: TagStatusEnum
+    tagged_at: Optional[datetime] = None
 class Tag(BaseModel):
     id: UUID
     text: str
@@ -35,3 +37,13 @@ class UploadDocumentResponse(BaseModel):
 
 class DocumentsResponse(BaseModel):
     documents: List[Document]
+
+class DocumentUpdate(BaseModel):
+    filename: Optional[str] = None
+    storage_path: Optional[str] = None
+    content_type: Optional[str] = None
+    size: Optional[int] = None
+    description: Optional[str] = None
+    user_id: Optional[int] = None
+    tag_status: Optional[TagStatusEnum] = None
+    tagged_at: Optional[datetime] = None

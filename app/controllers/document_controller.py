@@ -106,4 +106,10 @@ class DocumentController:
         # pass that key into generate_presigned_url
         return self.s3_interface.generate_presigned_url(key)
         
+    def partial_update_document(self, document_id, update_data):
+        try:
+            return self.document_interface.update_document(document_id, update_data)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error updating document: {str(e)}")
+        
         

@@ -41,7 +41,9 @@ class DocumentInterface:
             size=document.size,
             upload_time=document.upload_time,
             description=document.description,
-            user_id=document.user_id
+            user_id=document.user_id,
+            tag_status=document.tag_status,
+            tagged_at=document.tagged_at
             )
     
     def get_documents_by_user_id(self, user_id: int) -> List[DocumentPydantic]:
@@ -55,7 +57,9 @@ class DocumentInterface:
                 size=document.size,
                 upload_time=document.upload_time,
                 description=document.description,
-                user_id=document.user_id
+                user_id=document.user_id,
+                tag_status=document.tag_status,
+                tagged_at=document.tagged_at
                 )
             for document in documents_from_db
         ]
@@ -74,7 +78,31 @@ class DocumentInterface:
             size=document_from_db.size,
             upload_time=document_from_db.upload_time,
             description=document_from_db.description,
-            user_id=document_from_db.user_id
+            user_id=document_from_db.user_id,
+            tag_status=document_from_db.tag_status,
+            tagged_at=document_from_db.tagged_at
+        )
+
+    def update_document(self, document_id: str, update_data):
+        doc_uuid = uuid.UUID(document_id)
+        document = self.db.query(Document).filter(Document.id == doc_uuid).first()
+        if not document:
+            raise Exception(f"Document with id {document_id} not found")
+        for field, value in update_data.dict(exclude_unset=True).items():
+            setattr(document, field, value)
+        self.db.commit()
+        self.db.refresh(document)
+        return DocumentPydantic(
+            id=document.id,
+            filename=document.filename,
+            storage_path=document.storage_path,
+            content_type=document.content_type,
+            size=document.size,
+            upload_time=document.upload_time,
+            description=document.description,
+            user_id=document.user_id,
+            tag_status=document.tag_status,
+            tagged_at=document.tagged_at
         )
 
     def get_all_tags(self) -> List[TagPydantic]:

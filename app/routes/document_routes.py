@@ -7,7 +7,7 @@ from app.db.session import get_db
 from app.interfaces.queue_interface import QueueInterface
 from app.interfaces.s3_interface import S3Interface
 from app.interfaces.document_interface import DocumentInterface
-from app.schemas.document_schemas import Document, DocumentsResponse, UploadDocumentRequest, UploadDocumentResponse
+from app.schemas.document_schemas import Document, DocumentsResponse, UploadDocumentRequest, UploadDocumentResponse, DocumentUpdate
 
 router = APIRouter()
 
@@ -90,6 +90,18 @@ async def upload_document(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to upload document: {str(e)}"
+        )
+    
+@router.patch("/documents/{document_id}", response_model=Document)
+async def update_document(document_id: str, update_data: DocumentUpdate, document_controller: DocumentController = Depends(get_document_controller)) -> Document:
+    try:
+        return document_controller.partial_update_document(document_id, update_data)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update document: {str(e)}"
         )
     
     

@@ -9,6 +9,9 @@ from app.interfaces.document_interface import DocumentInterface
 from app.utils.document_utils import extract_text_from_pdf, extract_tags
 from app.ml_models.embedding_models import shared_sentence_model
 from sentence_transformers import util
+from app.db.models.document import TagStatusEnum
+from datetime import datetime, timezone 
+from app.schemas.document_schemas import DocumentUpdate
 
 QUEUE_URL = os.getenv("SQS_QUEUE_URL")
 AWS_REGION = os.getenv("AWS_REGION")
@@ -26,9 +29,14 @@ def process_message(message_body: dict):
         s3_url = message_body["s3_url"]
         content_type = message_body["content_type"]
 
+        # Set status to processing
+        document_interface.update_document(document_id, DocumentUpdate(tag_status=TagStatusEnum.processing))
+
         # Only tag PDFs for now
         if content_type != "application/pdf":
             print(f"Skipping non-PDF file: {content_type}")
+            # Set status to failed (or a custom no-op if you add it to the enum)
+            document_interface.update_document(document_id, DocumentUpdate(tag_status=TagStatusEnum.failed))
             return
 
         file_content = s3_interface.download_file(s3_url)
@@ -59,9 +67,19 @@ def process_message(message_body: dict):
                 associated_tag_ids.add(tag_obj.id)
 
         print(f"✅ Document {document_id} tagged with {len(associated_tag_ids)} tags.")
+        # Set status to completed and tagged_at to now (UTC)
+        document_interface.update_document(
+            document_id,
+            DocumentUpdate(tag_status=TagStatusEnum.completed, tagged_at=datetime.now(timezone.utc))
+        )
 
     except Exception as e:
         print(f"❌ Error processing message: {str(e)}")
+        # Set status to failed
+        try:
+            document_interface.update_document(document_id, DocumentUpdate(tag_status=TagStatusEnum.failed))
+        except Exception as inner_e:
+            print(f"❌ Error updating document status to failed: {str(inner_e)}")
 
     finally:
         db.close()
