@@ -5,6 +5,7 @@ from app.db.models.document import Document
 from app.db.models.document_tag import DocumentTag
 from app.schemas.document_schemas import Document as DocumentPydantic, Tag as TagPydantic
 from app.db.models.tag import Tag
+from datetime import datetime, timezone
 
 class DocumentInterface:
     def __init__(self, db: Session):
@@ -26,7 +27,8 @@ class DocumentInterface:
             content_type=content_type,
             size=size,
             description=description,
-            user_id=1 # TODO: Hardcoding the user_id here until we hook up to user-service
+            user_id=1, # TODO: Hardcoding the user_id here until we hook up to user-service
+            tag_status_updated_at=datetime.now(timezone.utc)
         )
 
         self.db.add(document)
