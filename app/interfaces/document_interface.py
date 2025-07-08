@@ -1,4 +1,5 @@
 from typing import List, Optional
+import uuid
 from sqlalchemy.orm import Session
 from app.db.models.document import Document
 from app.db.models.document_tag import DocumentTag
@@ -58,6 +59,23 @@ class DocumentInterface:
                 )
             for document in documents_from_db
         ]
+    
+    def get_document_by_id(self, document_id: str) -> DocumentPydantic:
+        doc_uuid = uuid.UUID(document_id)
+        document_from_db = self.db.query(Document).filter(Document.id == doc_uuid).first()
+        if not document_from_db:
+            raise Exception(f"Document with id {document_id} not found")
+        
+        return DocumentPydantic(
+            id=document_from_db.id,
+            filename=document_from_db.filename,
+            storage_path=document_from_db.storage_path,
+            content_type=document_from_db.content_type,
+            size=document_from_db.size,
+            upload_time=document_from_db.upload_time,
+            description=document_from_db.description,
+            user_id=document_from_db.user_id
+        )
 
     def get_all_tags(self) -> List[TagPydantic]:
         tags = self.db.query(Tag).all()

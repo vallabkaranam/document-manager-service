@@ -1,3 +1,4 @@
+from urllib.parse import urlparse
 from fastapi import HTTPException
 from sentence_transformers import util
 from app.ml_models.embedding_models import shared_sentence_model
@@ -78,5 +79,31 @@ class DocumentController:
                 status_code=500,
                 detail=f"Error getting document by user id: {str(e)}"
             )
+    
+    def get_document_by_document_id(self, document_id):
+        try:
+            return self.document_interface.get_document_by_id(document_id)
+
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error getting document by document id: {str(e)}"
+            ) 
+    
+    
+    def view_document_by_id(self, document_id):
+        # take doc id and get document
+        document = self.document_interface.get_document_by_id(document_id)
+
+        # get storage path from doc object
+        storage_path = document.storage_path
+        # parse
+        parsed = urlparse(storage_path)
+        key = parsed.path.lstrip("/") 
+
+        # pass that key into generate_presigned_url
+        return self.s3_interface.generate_presigned_url(key)
         
         

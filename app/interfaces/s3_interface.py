@@ -53,3 +53,27 @@ class S3Interface:
             raise Exception(f"The key '{key}' does not exist in bucket '{bucket}'.")
         except (NoCredentialsError, ClientError) as e:
             raise Exception(f"S3 download failed: {e}")
+
+    def generate_presigned_url(self, key: str, expires_in: int = 300) -> str:
+        """
+        Generates a presigned URL to access a private S3 object.
+
+        Args:
+            key (str): The object key in S3 (e.g., 'folder/file.pdf').
+            expires_in (int): URL expiration time in seconds (default: 5 minutes).
+
+        Returns:
+            str: A presigned URL for downloading the file.
+        """
+        try:
+            url = self.s3_client.generate_presigned_url(
+                ClientMethod="get_object",
+                Params={
+                    "Bucket": self.bucket_name,
+                    "Key": key
+                },
+                ExpiresIn=expires_in
+            )
+            return url
+        except ClientError as e:
+            raise Exception(f"Failed to generate presigned URL: {e}")
