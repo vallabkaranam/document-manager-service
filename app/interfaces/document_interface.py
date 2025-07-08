@@ -3,8 +3,7 @@ import uuid
 from sqlalchemy.orm import Session
 from app.db.models.document import Document
 from app.db.models.document_tag import DocumentTag
-from app.schemas.document_schemas import Document as DocumentPydantic, Tag as TagPydantic
-from app.db.models.tag import Tag
+from app.schemas.document_schemas import Document as DocumentPydantic
 from datetime import datetime, timezone
 
 class DocumentInterface:
@@ -110,18 +109,6 @@ class DocumentInterface:
             tag_status=document.tag_status,
             tag_status_updated_at=document.tag_status_updated_at
         )
-
-    def get_all_tags(self) -> List[TagPydantic]:
-        tags = self.db.query(Tag).all()
-        return [ TagPydantic(id=tag.id, text=tag.text, created_at=tag.created_at) for tag in tags ]
-
-    def create_tag(self, tag_text: str) -> TagPydantic:
-        tag = Tag(text=tag_text)
-        self.db.add(tag)
-        self.db.commit()
-        self.db.refresh(tag)
-
-        return TagPydantic(id=tag.id, text=tag.text, created_at=tag.created_at)
 
     def link_document_tag(self, document_id, tag_id):
         link = DocumentTag(document_id=document_id, tag_id=tag_id)

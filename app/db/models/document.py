@@ -6,6 +6,7 @@ from sqlalchemy.orm import relationship
 import uuid
 
 from app.db.base import Base
+from app.db.models.tag import Tag  # Import Tag for relationship resolution
 
 
 class TagStatusEnum(str, enum.Enum):

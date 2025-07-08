@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.db.session import SessionLocal
 from app.interfaces.s3_interface import S3Interface
 from app.interfaces.document_interface import DocumentInterface
+from app.interfaces.tag_interface import TagInterface
 from app.utils.document_utils import extract_text_from_pdf, extract_tags
 from app.ml_models.embedding_models import shared_sentence_model
 from sentence_transformers import util
@@ -22,6 +23,7 @@ s3_interface = S3Interface(os.getenv("S3_BUCKET_NAME"))
 def process_message(message_body: dict):
     db: Session = SessionLocal()
     document_interface = DocumentInterface(db)
+    tag_interface = TagInterface(db)
     model = shared_sentence_model
 
     try:
@@ -43,7 +45,7 @@ def process_message(message_body: dict):
         text = extract_text_from_pdf(file_content)
         tags = extract_tags(text)
 
-        existing_tags = document_interface.get_all_tags()
+        existing_tags = tag_interface.get_all_tags()
         existing_texts = [tag.text for tag in existing_tags]
         associated_tag_ids = set()
 
@@ -60,7 +62,7 @@ def process_message(message_body: dict):
                 if best_score >= 0.5:
                     matched_tag = existing_tags[best_idx]
 
-            tag_obj = matched_tag or document_interface.create_tag(tag_text)
+            tag_obj = matched_tag or tag_interface.create_tag(tag_text)
 
             if tag_obj.id not in associated_tag_ids:
                 document_interface.link_document_tag(document_id, tag_obj.id)
