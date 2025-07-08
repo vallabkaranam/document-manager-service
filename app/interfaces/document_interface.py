@@ -43,7 +43,7 @@ class DocumentInterface:
             description=document.description,
             user_id=document.user_id,
             tag_status=document.tag_status,
-            tagged_at=document.tagged_at
+            tag_status_updated_at=document.tag_status_updated_at
             )
     
     def get_documents_by_user_id(self, user_id: int) -> List[DocumentPydantic]:
@@ -59,7 +59,7 @@ class DocumentInterface:
                 description=document.description,
                 user_id=document.user_id,
                 tag_status=document.tag_status,
-                tagged_at=document.tagged_at
+                tag_status_updated_at=document.tag_status_updated_at
                 )
             for document in documents_from_db
         ]
@@ -80,7 +80,7 @@ class DocumentInterface:
             description=document_from_db.description,
             user_id=document_from_db.user_id,
             tag_status=document_from_db.tag_status,
-            tagged_at=document_from_db.tagged_at
+            tag_status_updated_at=document_from_db.tag_status_updated_at
         )
 
     def update_document(self, document_id: str, update_data):
@@ -102,7 +102,7 @@ class DocumentInterface:
             description=document.description,
             user_id=document.user_id,
             tag_status=document.tag_status,
-            tagged_at=document.tagged_at
+            tag_status_updated_at=document.tag_status_updated_at
         )
 
     def get_all_tags(self) -> List[TagPydantic]:

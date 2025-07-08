@@ -13,6 +13,7 @@ class TagStatusEnum(str, enum.Enum):
     processing = "processing"
     completed = "completed"
     failed = "failed"
+    skipped = "skipped"
 
 class Document(Base):
     __tablename__ = "documents"
@@ -26,7 +27,7 @@ class Document(Base):
     description = Column(String, nullable=True)
     user_id = Column(Integer, nullable=False, index=True)
     tag_status = Column(Enum(TagStatusEnum), nullable=False, default=TagStatusEnum.pending)
-    tagged_at = Column(DateTime(timezone=True), nullable=True)
+    tag_status_updated_at = Column(DateTime(timezone=True), nullable=True)
 
     # Relationships
     document_tags = relationship("DocumentTag", back_populates="document", cascade="all, delete-orphan")

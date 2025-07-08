@@ -25,7 +25,7 @@ class Document(BaseModel):
     description: Optional[str] = None
     user_id: int
     tag_status: TagStatusEnum
-    tagged_at: Optional[datetime] = None
+    tag_status_updated_at: Optional[datetime] = None
 class Tag(BaseModel):
     id: UUID
     text: str
@@ -46,4 +46,4 @@ class DocumentUpdate(BaseModel):
     description: Optional[str] = None
     user_id: Optional[int] = None
     tag_status: Optional[TagStatusEnum] = None
-    tagged_at: Optional[datetime] = None
+    tag_status_updated_at: Optional[datetime] = None

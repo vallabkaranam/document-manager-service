@@ -30,13 +30,13 @@ def process_message(message_body: dict):
         content_type = message_body["content_type"]
 
         # Set status to processing
-        document_interface.update_document(document_id, DocumentUpdate(tag_status=TagStatusEnum.processing))
+        document_interface.update_document(document_id, DocumentUpdate(tag_status=TagStatusEnum.processing, tag_status_updated_at=datetime.now(timezone.utc)))
 
         # Only tag PDFs for now
         if content_type != "application/pdf":
             print(f"Skipping non-PDF file: {content_type}")
-            # Set status to failed (or a custom no-op if you add it to the enum)
-            document_interface.update_document(document_id, DocumentUpdate(tag_status=TagStatusEnum.failed))
+            # Set status to skipped
+            document_interface.update_document(document_id, DocumentUpdate(tag_status=TagStatusEnum.skipped, tag_status_updated_at=datetime.now(timezone.utc)))
             return
 
         file_content = s3_interface.download_file(s3_url)
@@ -67,17 +67,17 @@ def process_message(message_body: dict):
                 associated_tag_ids.add(tag_obj.id)
 
         print(f"✅ Document {document_id} tagged with {len(associated_tag_ids)} tags.")
-        # Set status to completed and tagged_at to now (UTC)
+        # Set status to completed and tag_status_updated_at to now (UTC)
         document_interface.update_document(
             document_id,
-            DocumentUpdate(tag_status=TagStatusEnum.completed, tagged_at=datetime.now(timezone.utc))
+            DocumentUpdate(tag_status=TagStatusEnum.completed, tag_status_updated_at=datetime.now(timezone.utc))
         )
 
     except Exception as e:
         print(f"❌ Error processing message: {str(e)}")
         # Set status to failed
         try:
-            document_interface.update_document(document_id, DocumentUpdate(tag_status=TagStatusEnum.failed))
+            document_interface.update_document(document_id, DocumentUpdate(tag_status=TagStatusEnum.failed, tag_status_updated_at=datetime.now(timezone.utc)))
         except Exception as inner_e:
             print(f"❌ Error updating document status to failed: {str(inner_e)}")
 
