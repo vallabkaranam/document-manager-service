@@ -31,7 +31,7 @@ def process_message(message_body: dict):
             print(f"Skipping non-PDF file: {content_type}")
             return
 
-        file_content = s3_interface.download_file(s3_url) # TODO: this (especially with private)
+        file_content = s3_interface.download_file(s3_url)
         text = extract_text_from_pdf(file_content)
         tags = extract_tags(text)
 
