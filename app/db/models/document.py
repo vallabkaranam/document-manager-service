@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, DateTime
+import enum
+from sqlalchemy import Column, Enum, Integer, String, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -6,6 +7,12 @@ import uuid
 
 from app.db.base import Base
 
+
+class TagStatusEnum(str, enum.Enum):
+    pending = "pending"
+    processing = "processing"
+    completed = "completed"
+    failed = "failed"
 
 class Document(Base):
     __tablename__ = "documents"
@@ -18,6 +25,8 @@ class Document(Base):
     upload_time = Column(DateTime(timezone=True), server_default=func.now())
     description = Column(String, nullable=True)
     user_id = Column(Integer, nullable=False, index=True)
+    tag_status = Column(Enum(TagStatusEnum), nullable=False, default=TagStatusEnum.pending)
+    tagged_at = Column(DateTime(timezone=True), nullable=True)
 
     # Relationships
     document_tags = relationship("DocumentTag", back_populates="document", cascade="all, delete-orphan")
