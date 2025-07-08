@@ -2,7 +2,6 @@ from typing import List, Optional
 import uuid
 from sqlalchemy.orm import Session
 from app.db.models.document import Document
-from app.db.models.document_tag import DocumentTag
 from app.schemas.document_schemas import Document as DocumentPydantic
 from datetime import datetime, timezone
 
@@ -109,8 +108,3 @@ class DocumentInterface:
             tag_status=document.tag_status,
             tag_status_updated_at=document.tag_status_updated_at
         )
-
-    def link_document_tag(self, document_id, tag_id):
-        link = DocumentTag(document_id=document_id, tag_id=tag_id)
-        self.db.add(link)
-        self.db.commit()

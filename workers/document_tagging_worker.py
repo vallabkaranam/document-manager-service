@@ -7,6 +7,7 @@ from app.db.session import SessionLocal
 from app.interfaces.s3_interface import S3Interface
 from app.interfaces.document_interface import DocumentInterface
 from app.interfaces.tag_interface import TagInterface
+from app.interfaces.document_tag_interface import DocumentTagInterface
 from app.utils.document_utils import extract_text_from_pdf, extract_tags
 from app.ml_models.embedding_models import shared_sentence_model
 from sentence_transformers import util
@@ -24,6 +25,7 @@ def process_message(message_body: dict):
     db: Session = SessionLocal()
     document_interface = DocumentInterface(db)
     tag_interface = TagInterface(db)
+    document_tag_interface = DocumentTagInterface(db)
     model = shared_sentence_model
 
     try:
@@ -65,7 +67,7 @@ def process_message(message_body: dict):
             tag_obj = matched_tag or tag_interface.create_tag(tag_text)
 
             if tag_obj.id not in associated_tag_ids:
-                document_interface.link_document_tag(document_id, tag_obj.id)
+                document_tag_interface.link_document_tag(document_id, tag_obj.id)
                 associated_tag_ids.add(tag_obj.id)
 
         print(f"✅ Document {document_id} tagged with {len(associated_tag_ids)} tags.")
