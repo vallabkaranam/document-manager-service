@@ -27,8 +27,7 @@ class DocumentInterface:
             content_type=content_type,
             size=size,
             description=description,
-            user_id=1, # TODO: Hardcoding the user_id here until we hook up to user-service
-            tag_status_updated_at=datetime.now(timezone.utc)
+            user_id=1 # TODO: Hardcoding the user_id here until we hook up to user-service
         )
 
         self.db.add(document)
