@@ -1,4 +1,6 @@
 from typing import List
+import uuid
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from app.db.models.tag import Tag
 from app.schemas.tag_schemas import Tag as TagPydantic
@@ -17,3 +19,20 @@ class TagInterface:
         self.db.commit()
         self.db.refresh(tag)
         return TagPydantic(id=tag.id, text=tag.text, created_at=tag.created_at) 
+
+    def delete_tag(self, tag_id: str) -> TagPydantic:
+        tag_uuid = uuid.UUID(tag_id)
+        tag = self.db.query(Tag).filter(Tag.id == tag_uuid).first()
+
+        if not tag:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No tag with "
+            )
+
+        # Create response before deleting
+        response = TagPydantic.model_validate(tag)
+            
+        self.db.delete(tag)
+        self.db.commit()
+        return response

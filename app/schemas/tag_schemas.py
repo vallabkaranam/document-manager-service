@@ -7,6 +7,10 @@ class Tag(BaseModel):
     id: UUID
     text: str
     created_at: datetime
+    
+    model_config = {
+        "from_attributes": True
+    }
 
 class CreateTagRequest(BaseModel):
     text: str = Field(
