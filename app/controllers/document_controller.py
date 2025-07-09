@@ -112,4 +112,10 @@ class DocumentController:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error updating document: {str(e)}")
         
+    def delete_document(self, document_id):
+        try:
+            return self.document_interface.delete_document(document_id)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error deleting document: {str(e)}")
+        
         

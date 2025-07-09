@@ -101,5 +101,17 @@ async def update_document(document_id: str, update_data: DocumentUpdate, documen
             detail=f"Failed to update document: {str(e)}"
         )
     
+@router.delete("/documents/{document_id}", response_model=Document)
+async def delete_document(document_id: str, document_controller: DocumentController = Depends(get_document_controller)) -> Document:
+    try:
+        return document_controller.delete_document(document_id)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete document: {str(e)}"
+        )
+    
     
 

@@ -108,3 +108,28 @@ class DocumentInterface:
             tag_status=document.tag_status,
             tag_status_updated_at=document.tag_status_updated_at
         )
+
+    def delete_document(self, document_id: str) -> DocumentPydantic:
+        doc_uuid = uuid.UUID(document_id)
+        document = self.db.query(Document).filter(Document.id == doc_uuid).first()
+        if not document:
+            raise Exception(f"Document with id {document_id} not found")
+        
+        # Create response before deleting
+        response = DocumentPydantic(
+            id=document.id,
+            filename=document.filename,
+            storage_path=document.storage_path,
+            content_type=document.content_type,
+            size=document.size,
+            upload_time=document.upload_time,
+            updated_at=document.updated_at,
+            description=document.description,
+            user_id=document.user_id,
+            tag_status=document.tag_status,
+            tag_status_updated_at=document.tag_status_updated_at
+        )
+        
+        self.db.delete(document)
+        self.db.commit()
+        return response
