@@ -43,3 +43,19 @@ async def create_tag(
             status_code=500,
             detail=f"Failed to create tag: {str(e)}"
         ) 
+
+@router.delete("/tags/{tag_id}", response_model=Tag)
+async def delete_tag(
+    tag_id: str,
+    tag_controller: TagController = Depends(get_tag_controller)    
+) -> Tag:
+    try:
+        return tag_controller.delete_tag(tag_id)
+    
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete tag: {str(e)}"
+        )

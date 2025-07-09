@@ -27,7 +27,7 @@ class TagInterface:
         if not tag:
             raise HTTPException(
                 status_code=404,
-                detail=f"No tag with "
+                detail=f"Tag with id {tag_id} not found"
             )
 
         # Create response before deleting
