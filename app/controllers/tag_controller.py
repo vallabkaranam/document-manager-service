@@ -22,6 +22,7 @@ class TagController:
     def create_tag(self, tag_text: str) -> Tag:
         try:
             return self.tag_interface.create_tag(tag_text)
+        
         except HTTPException as e:
             raise e
         except Exception as e:
@@ -29,3 +30,13 @@ class TagController:
                 status_code=500,
                 detail=f"Error creating tag: {str(e)}"
             ) 
+    
+    def delete_tag(self, tag_id: str) -> Tag:
+        try:
+            return self.tag_interface.delete_tag(tag_id)
+        
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            raise e
+        
