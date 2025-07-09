@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.routes import document_routes
+from app.routes import document_routes, tag_routes
 
 app = FastAPI(
     title="Document Manager API",
@@ -10,6 +10,7 @@ app = FastAPI(
 
 # Include routers
 app.include_router(document_routes.router, prefix="/api/v1/document", tags=["document"])
+app.include_router(tag_routes.router, prefix="/api/v1/tag", tags=["tag"])
 
 @app.get("/")
 def read_root():

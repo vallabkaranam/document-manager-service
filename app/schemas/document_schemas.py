@@ -27,10 +27,6 @@ class Document(BaseModel):
     user_id: int
     tag_status: TagStatusEnum
     tag_status_updated_at: datetime
-class Tag(BaseModel):
-    id: UUID
-    text: str
-    created_at: datetime
 
 class DocumentsResponse(BaseModel):
     documents: List[Document]

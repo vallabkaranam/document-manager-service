@@ -1,7 +1,7 @@
 from typing import List
 from sqlalchemy.orm import Session
 from app.db.models.tag import Tag
-from app.schemas.document_schemas import Tag as TagPydantic
+from app.schemas.tag_schemas import Tag as TagPydantic
 
 class TagInterface:
     def __init__(self, db: Session):

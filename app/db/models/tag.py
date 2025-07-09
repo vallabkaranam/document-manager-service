@@ -5,6 +5,7 @@ from sqlalchemy.orm import relationship
 import uuid
 
 from app.db.base import Base
+from app.db.models.document_tag import DocumentTag
 
 
 class Tag(Base):
