@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from typing import List, Optional
 import uuid
 from sqlalchemy.orm import Session
@@ -69,7 +70,10 @@ class DocumentInterface:
         doc_uuid = uuid.UUID(document_id)
         document_from_db = self.db.query(Document).filter(Document.id == doc_uuid).first()
         if not document_from_db:
-            raise Exception(f"Document with id {document_id} not found")
+            raise HTTPException(
+                status_code=404,
+                detail=f"Document with id {document_id} not found"
+                )
         
         return DocumentPydantic(
             id=document_from_db.id,
@@ -89,7 +93,11 @@ class DocumentInterface:
         doc_uuid = uuid.UUID(document_id)
         document = self.db.query(Document).filter(Document.id == doc_uuid).first()
         if not document:
-            raise Exception(f"Document with id {document_id} not found")
+            raise HTTPException(
+                status_code=404,
+                detail=f"Document with id {document_id} not found"
+                )
+        
         for field, value in update_data.dict(exclude_unset=True).items():
             setattr(document, field, value)
         document.updated_at = datetime.now(timezone.utc)
@@ -113,7 +121,9 @@ class DocumentInterface:
         doc_uuid = uuid.UUID(document_id)
         document = self.db.query(Document).filter(Document.id == doc_uuid).first()
         if not document:
-            raise Exception(f"Document with id {document_id} not found")
+            raise HTTPException(
+                status_code=404,
+                detail=f"Document with id {document_id} not found")
         
         # Create response before deleting
         response = DocumentPydantic(
