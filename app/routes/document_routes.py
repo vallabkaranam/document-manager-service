@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.controllers.document_controller import DocumentController
 from app.db.session import get_db
 from app.interfaces.document_tag_interface import DocumentTagInterface
+from app.interfaces.openai_interface import OpenAIInterface
 from app.interfaces.queue_interface import QueueInterface
 from app.interfaces.s3_interface import S3Interface
 from app.interfaces.document_interface import DocumentInterface
@@ -24,14 +25,18 @@ def get_document_interface(db: Session = Depends(get_db)) -> DocumentInterface:
 def get_document_tag_interface(db: Session = Depends(get_db)) -> DocumentTagInterface:
     return DocumentTagInterface(db)
 
+def get_openai_interface() -> OpenAIInterface:
+    return OpenAIInterface()
+
 
 def get_document_controller(
     s3_interface: S3Interface = Depends(get_s3_interface),
     queue_interface: QueueInterface = Depends(get_queue_interface),
     document_interface: DocumentInterface = Depends(get_document_interface),
-    document_tag_interface: DocumentTagInterface = Depends(get_document_tag_interface)
+    document_tag_interface: DocumentTagInterface = Depends(get_document_tag_interface),
+    openai_interface: OpenAIInterface = Depends(get_openai_interface)
 ) -> DocumentController:
-    return DocumentController(s3_interface, queue_interface, document_interface, document_tag_interface)
+    return DocumentController(s3_interface, queue_interface, document_interface, document_tag_interface, openai_interface)
 
 @router.get("/documents")
 async def get_documents_by_user_id(user_id: int, document_controller: DocumentController = Depends(get_document_controller)) -> DocumentsResponse:

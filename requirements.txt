@@ -10,3 +10,4 @@ keybert
 sentence-transformers
 PyPDF2
 httpx
+openai

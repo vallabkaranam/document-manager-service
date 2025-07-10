@@ -1,18 +1,18 @@
 from urllib.parse import urlparse
 from fastapi import HTTPException
-from sentence_transformers import util
 from app.ml_models.embedding_models import shared_sentence_model
 import httpx
 
-from app.utils.document_utils import extract_tags, extract_text_from_pdf, generate_unique_filename
+from app.utils.document_utils import extract_text_from_pdf, generate_unique_filename
 
 
 class DocumentController:
-    def __init__(self, s3_interface, queue_interface, document_interface, document_tag_interface):
+    def __init__(self, s3_interface, queue_interface, document_interface, document_tag_interface, openai_interface):
         self.s3_interface = s3_interface
         self.queue_interface = queue_interface
         self.document_interface = document_interface
         self.document_tag_interface = document_tag_interface
+        self.openai_interface = openai_interface
         self.model = shared_sentence_model
 
     # ✅ 2. Document Upload API
@@ -152,8 +152,8 @@ class DocumentController:
             file_bytes = await response.aread()
             text = extract_text_from_pdf(file_bytes)
 
-            # Step 4: Pass to GPT for summarization here
-            summary = text
+            # Step 4: Pass to GPT for summarization
+            summary = await self.openai_interface.summarize_text(text)
 
             return summary
             
