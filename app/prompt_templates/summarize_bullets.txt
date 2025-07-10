@@ -1,0 +1,3 @@
+Summarize the following document into {bullet_points} clear, concise bullet points:
+
+{text}
