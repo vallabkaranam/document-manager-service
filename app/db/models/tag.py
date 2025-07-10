@@ -13,7 +13,8 @@ class Tag(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     text = Column(String, nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), nullable=False, default=func.now())
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=func.now())
 
     # Relationships
     document_tags = relationship("DocumentTag", back_populates="tag", cascade="all, delete-orphan")
