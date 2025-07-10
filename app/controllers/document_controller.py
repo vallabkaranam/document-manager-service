@@ -92,6 +92,14 @@ class DocumentController:
                 detail=f"Error getting document by document id: {str(e)}"
             ) 
     
+    def get_documents_by_tag_id(self, tag_id):
+        try:
+            return self.document_interface.get_documents_by_tag_id(tag_id)
+        
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            raise e
     
     def view_document_by_id(self, document_id):
         # take doc id and get document

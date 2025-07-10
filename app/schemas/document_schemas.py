@@ -27,6 +27,10 @@ class Document(BaseModel):
     user_id: int
     tag_status: TagStatusEnum
     tag_status_updated_at: datetime
+    
+    model_config = {
+        "from_attributes": True
+    }
 
 class DocumentsResponse(BaseModel):
     documents: List[Document]

@@ -41,6 +41,21 @@ async def get_documents_by_user_id(user_id: int, document_controller: DocumentCo
             detail=f"Unable to get documents by user id: {str(e)}"
         )
     
+@router.get("/documents/{tag_id}")
+async def get_documents_by_tag_id(tag_id: str, document_controller: DocumentController = Depends(get_document_controller)) -> DocumentsResponse:
+    try:
+        documents = document_controller.get_documents_by_tag_id(tag_id)
+        return DocumentsResponse(documents=documents)
+    
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unable to get documents for tag with id {tag_id}: {str(e)}"
+        )
+    
+    
 @router.get("/documents/{document_id}", response_model=Document)
 async def get_document_by_id(document_id: str, document_controller: DocumentController = Depends(get_document_controller)) -> Document:
     try:

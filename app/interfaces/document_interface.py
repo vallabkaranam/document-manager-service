@@ -3,7 +3,8 @@ from typing import List, Optional
 import uuid
 from sqlalchemy.orm import Session
 from app.db.models.document import Document
-from app.schemas.document_schemas import Document as DocumentPydantic
+from app.db.models.tag import Tag
+from app.schemas.document_schemas import Document as DocumentPydantic, DocumentsResponse
 from datetime import datetime, timezone
 
 class DocumentInterface:
@@ -88,6 +89,18 @@ class DocumentInterface:
             tag_status=document_from_db.tag_status,
             tag_status_updated_at=document_from_db.tag_status_updated_at
         )
+
+    def get_documents_by_tag_id(self, tag_id: str) -> DocumentsResponse:
+        tag_uuid = uuid.UUID(tag_id)
+        tag = self.db.query(Tag).filter(Tag.id == tag_uuid).first()
+        if not tag:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Tag with id {tag_id} not found"
+            )
+
+        documents = [DocumentPydantic.model_validate(document) for document in tag.documents]
+        return documents
 
     def update_document(self, document_id: str, update_data):
         doc_uuid = uuid.UUID(document_id)
