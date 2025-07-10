@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import List
 import uuid
 from fastapi import HTTPException
@@ -11,14 +12,14 @@ class TagInterface:
 
     def get_all_tags(self) -> List[TagPydantic]:
         tags = self.db.query(Tag).all()
-        return [TagPydantic(id=tag.id, text=tag.text, created_at=tag.created_at) for tag in tags]
+        return [TagPydantic(id=tag.id, text=tag.text, created_at=tag.created_at, updated_at=tag.updated_at) for tag in tags]
 
     def create_tag(self, tag_text: str) -> TagPydantic:
         tag = Tag(text=tag_text)
         self.db.add(tag)
         self.db.commit()
         self.db.refresh(tag)
-        return TagPydantic(id=tag.id, text=tag.text, created_at=tag.created_at) 
+        return TagPydantic(id=tag.id, text=tag.text, created_at=tag.created_at, updated_at=tag.updated_at) 
 
     def delete_tag(self, tag_id: str) -> TagPydantic:
         tag_uuid = uuid.UUID(tag_id)
@@ -61,6 +62,7 @@ class TagInterface:
         
         for field, value in update_data.dict(exclude_unset=True).items():
             setattr(tag, field, value)
+        tag.updated_at = datetime.now(timezone.utc)
         
         self.db.commit()
         self.db.refresh(tag)

@@ -7,6 +7,7 @@ class Tag(BaseModel):
     id: UUID
     text: str
     created_at: datetime
+    updated_at: datetime
     
     model_config = {
         "from_attributes": True
@@ -16,6 +17,7 @@ class TagUpdate(BaseModel):
     id: Optional[UUID] = None
     text: Optional[str] = None
     created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
 class CreateTagRequest(BaseModel):
     text: str = Field(
