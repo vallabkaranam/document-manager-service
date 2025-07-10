@@ -3,8 +3,9 @@ from typing import List
 import uuid
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
+from app.db.models.document import Document
 from app.db.models.tag import Tag
-from app.schemas.tag_schemas import Tag as TagPydantic
+from app.schemas.tag_schemas import Tag as TagPydantic, TagsResponse
 
 class TagInterface:
     def __init__(self, db: Session):
@@ -51,7 +52,7 @@ class TagInterface:
         tag_response = TagPydantic.model_validate(tag)
         return tag_response
     
-    def update_tag(self, tag_id: str, update_data):
+    def update_tag(self, tag_id: str, update_data) -> TagPydantic:
         tag_uuid = uuid.UUID(tag_id)
         tag = self.db.query(Tag).filter(Tag.id == tag_uuid).first()
         if not tag:
@@ -68,4 +69,21 @@ class TagInterface:
         self.db.refresh(tag)
         
         return TagPydantic.model_validate(tag)
+
+    def get_tags_by_document_id(self, document_id: str) -> TagsResponse:
+        document_uuid = uuid.UUID(document_id)
+        document = self.db.query(Document).filter(Document.id == document_uuid).first()
+        if not document:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Unable to get document with id {document_id}"
+            )
+
+        tags = [TagPydantic.model_validate(tag) for tag in document.tags]
+
+        return tags
+        
+        
+
+
         

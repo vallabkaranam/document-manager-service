@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from typing import List
 from app.interfaces.tag_interface import TagInterface
-from app.schemas.tag_schemas import Tag as Tag
+from app.schemas.tag_schemas import Tag as Tag, TagsResponse
 
 
 class TagController:
@@ -58,4 +58,12 @@ class TagController:
         except Exception as e:
             raise e
         
-
+    def get_tags_by_document_id(self, document_id: str) -> TagsResponse:
+        try:
+            return self.tag_interface.get_tags_by_document_id(document_id)
+        
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            raise e
+        

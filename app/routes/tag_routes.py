@@ -28,6 +28,20 @@ async def get_all_tags(tag_controller: TagController = Depends(get_tag_controlle
             detail=f"Unable to get all tags: {str(e)}"
         )
 
+@router.get("/tags/{document_id}", response_model=TagsResponse)
+async def get_tags_by_document_id(document_id: str, tag_controller: TagController = Depends(get_tag_controller)) -> TagsResponse:
+    try:
+        tags = tag_controller.get_tags_by_document_id(document_id)
+        return TagsResponse(tags=tags)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unable to get tags for document with id {document_id}: {str(e)}"
+        )
+
+
 @router.post("/tags", response_model=Tag)
 async def create_tag(
     tag_request: CreateTagRequest,
