@@ -147,3 +147,17 @@ async def associate_document_and_tag(document_id: str, tag_id: str, document_con
             detail=f"Failed to associate document {document_id} with tag {tag_id}: {str(e)}"
         )
 
+@router.get("/documents/{document_id}/summarize")
+async def summarize_document_by_document_id(document_id: str, document_controller: DocumentController = Depends(get_document_controller)):
+    try:
+        summary = await document_controller.summarize_document_by_document_id(document_id)
+        return summary
+    
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to summarize document {document_id}: {str(e)}"
+        )
+

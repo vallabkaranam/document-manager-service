@@ -2,6 +2,7 @@ from urllib.parse import urlparse
 from fastapi import HTTPException
 from sentence_transformers import util
 from app.ml_models.embedding_models import shared_sentence_model
+import httpx
 
 from app.utils.document_utils import extract_tags, extract_text_from_pdf, generate_unique_filename
 
@@ -135,5 +136,32 @@ class DocumentController:
             raise e
         except Exception as e:
             raise e
-        
+    
+
+    async def summarize_document_by_document_id(self, document_id: str) -> str:
+        try:      
+            # Step 1: Get presigned URL from storage path
+            presigned_url = self.view_document_by_id(document_id)
+
+            # Step 2: Download file from S3 using async HTTP client
+            async with httpx.AsyncClient() as client:
+                response = await client.get(presigned_url)
+                response.raise_for_status()
+
+            # Step 3: Extract bytes and text
+            file_bytes = await response.aread()
+            text = extract_text_from_pdf(file_bytes)
+
+            # Step 4: Pass to GPT for summarization here
+            summary = text
+
+            return summary
+            
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error summarizing document: {str(e)}"
+            )
         

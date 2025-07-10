@@ -9,3 +9,4 @@ boto3
 keybert
 sentence-transformers
 PyPDF2
+httpx
