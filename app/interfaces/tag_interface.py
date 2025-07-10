@@ -36,3 +36,16 @@ class TagInterface:
         self.db.delete(tag)
         self.db.commit()
         return response
+    
+    def get_tag_by_id(self, tag_id: str) -> TagPydantic:
+        tag_uuid = uuid.UUID(tag_id)
+        tag = self.db.query(Tag).filter(Tag.id == tag_uuid).first()
+
+        if not tag:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Tag with id {tag_id} not found"
+            )
+
+        tag_response = TagPydantic.model_validate(tag)
+        return tag_response

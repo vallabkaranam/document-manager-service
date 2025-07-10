@@ -39,4 +39,12 @@ class TagController:
             raise e
         except Exception as e:
             raise e
+    
+    def get_tag_by_id(self, tag_id: str) -> Tag:
+        try:
+            return self.tag_interface.get_tag_by_id(tag_id)
         
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            raise e

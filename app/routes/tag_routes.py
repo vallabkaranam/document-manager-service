@@ -59,3 +59,19 @@ async def delete_tag(
             status_code=500,
             detail=f"Failed to delete tag: {str(e)}"
         )
+
+@router.get("/tags/{tag_id}", response_model=Tag)
+async def get_tag_by_id(
+    tag_id: str,
+    tag_controller: TagController = Depends(get_tag_controller)
+) -> Tag:
+    try:
+        return tag_controller.get_tag_by_id(tag_id)
+    
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f'Failed to get tag by id: {str(e)}'
+        )
