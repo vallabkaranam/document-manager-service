@@ -67,7 +67,7 @@ def process_message(message_body: dict):
             tag_obj = matched_tag or tag_interface.create_tag(tag_text)
 
             if tag_obj.id not in associated_tag_ids:
-                document_tag_interface.link_document_tag(document_id, tag_obj.id)
+                document_tag_interface.link_document_tag(str(document_id), str(tag_obj.id))
                 associated_tag_ids.add(tag_obj.id)
 
         print(f"✅ Document {document_id} tagged with {len(associated_tag_ids)} tags.")

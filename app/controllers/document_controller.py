@@ -7,10 +7,11 @@ from app.utils.document_utils import extract_tags, extract_text_from_pdf, genera
 
 
 class DocumentController:
-    def __init__(self, s3_interface, queue_interface, document_interface):
+    def __init__(self, s3_interface, queue_interface, document_interface, document_tag_interface):
         self.s3_interface = s3_interface
         self.queue_interface = queue_interface
         self.document_interface = document_interface
+        self.document_tag_interface = document_tag_interface
         self.model = shared_sentence_model
 
     # ✅ 2. Document Upload API
@@ -125,5 +126,14 @@ class DocumentController:
             return self.document_interface.delete_document(document_id)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error deleting document: {str(e)}")
+        
+    def associate_tag_and_document(self, document_id, tag_id):
+        try:
+            return self.document_tag_interface.link_document_tag(document_id, tag_id)
+        
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            raise e
         
         

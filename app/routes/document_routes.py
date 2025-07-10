@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 from app.controllers.document_controller import DocumentController
 from app.db.session import get_db
+from app.interfaces.document_tag_interface import DocumentTagInterface
 from app.interfaces.queue_interface import QueueInterface
 from app.interfaces.s3_interface import S3Interface
 from app.interfaces.document_interface import DocumentInterface
@@ -20,12 +21,17 @@ def get_queue_interface() -> QueueInterface:
 def get_document_interface(db: Session = Depends(get_db)) -> DocumentInterface:
     return DocumentInterface(db)
 
+def get_document_tag_interface(db: Session = Depends(get_db)) -> DocumentTagInterface:
+    return DocumentTagInterface(db)
+
+
 def get_document_controller(
     s3_interface: S3Interface = Depends(get_s3_interface),
     queue_interface: QueueInterface = Depends(get_queue_interface),
-    document_interface: DocumentInterface = Depends(get_document_interface)
+    document_interface: DocumentInterface = Depends(get_document_interface),
+    document_tag_interface: DocumentTagInterface = Depends(get_document_tag_interface)
 ) -> DocumentController:
-    return DocumentController(s3_interface, queue_interface, document_interface)
+    return DocumentController(s3_interface, queue_interface, document_interface, document_tag_interface)
 
 @router.get("/documents")
 async def get_documents_by_user_id(user_id: int, document_controller: DocumentController = Depends(get_document_controller)) -> DocumentsResponse:
@@ -128,5 +134,16 @@ async def delete_document(document_id: str, document_controller: DocumentControl
             detail=f"Failed to delete document: {str(e)}"
         )
     
+@router.post("/documents/{document_id}/tags/{tag_id}")
+async def associate_document_and_tag(document_id: str, tag_id: str, document_controller: DocumentController = Depends(get_document_controller)):
+    try:
+        return document_controller.associate_tag_and_document(document_id, tag_id)
     
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to associate document {document_id} with tag {tag_id}: {str(e)}"
+        )
 
