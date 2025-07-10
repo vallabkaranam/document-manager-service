@@ -1,10 +1,9 @@
-from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.controllers.tag_controller import TagController
 from app.db.session import get_db
 from app.interfaces.tag_interface import TagInterface
-from app.schemas.tag_schemas import Tag, CreateTagRequest, TagsResponse
+from app.schemas.tag_schemas import Tag, CreateTagRequest, TagUpdate, TagsResponse
 
 router = APIRouter()
 
@@ -74,4 +73,17 @@ async def get_tag_by_id(
         raise HTTPException(
             status_code=500,
             detail=f'Failed to get tag by id: {str(e)}'
+        )
+
+@router.patch("/tags/{tag_id}", response_model=Tag)
+async def update_tag(tag_id: str, update_data: TagUpdate, tag_controller: TagController = Depends(get_tag_controller)) -> Tag:
+    try:
+        return tag_controller.partial_update_tag(tag_id, update_data)
+    
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update tag: {str(e)}"
         )

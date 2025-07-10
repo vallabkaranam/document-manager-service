@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel, Field
 from datetime import datetime
 from uuid import UUID
@@ -11,6 +11,11 @@ class Tag(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+class TagUpdate(BaseModel):
+    id: Optional[UUID] = None
+    text: Optional[str] = None
+    created_at: Optional[datetime] = None
 
 class CreateTagRequest(BaseModel):
     text: str = Field(

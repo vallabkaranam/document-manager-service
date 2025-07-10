@@ -49,3 +49,21 @@ class TagInterface:
 
         tag_response = TagPydantic.model_validate(tag)
         return tag_response
+    
+    def update_tag(self, tag_id: str, update_data):
+        tag_uuid = uuid.UUID(tag_id)
+        tag = self.db.query(Tag).filter(Tag.id == tag_uuid).first()
+        if not tag:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Tag with id {tag_id} not found"
+            )
+        
+        for field, value in update_data.dict(exclude_unset=True).items():
+            setattr(tag, field, value)
+        
+        self.db.commit()
+        self.db.refresh(tag)
+        
+        return TagPydantic.model_validate(tag)
+        

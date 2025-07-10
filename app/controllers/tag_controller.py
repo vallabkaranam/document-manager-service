@@ -48,3 +48,14 @@ class TagController:
             raise e
         except Exception as e:
             raise e
+    
+    def partial_update_tag(self, tag_id: str, update_data) -> Tag:
+        try:
+            return self.tag_interface.update_tag(tag_id, update_data)
+        
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            raise e
+        
+
