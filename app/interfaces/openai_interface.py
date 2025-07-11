@@ -1,6 +1,8 @@
+from datetime import UTC, datetime
 import os
 from fastapi import HTTPException
 from openai import AsyncOpenAI
+from app.schemas.openai_schemas import OpenAISummaryResponse, TokenUsage
 from app.utils.prompt_utils import load_prompt_template
 
 # Load API key and model from env
@@ -15,7 +17,7 @@ class OpenAIInterface:
         self.model = GPT_MODEL
         self.summary_prompt_template_path = "app/prompt_templates/summarize_bullets.txt"
 
-    async def summarize_text(self, text: str, bullet_points: int = 5, max_tokens: int = 500) -> str:
+    async def summarize_text(self, text: str, bullet_points: int = 5, max_tokens: int = 500) -> OpenAISummaryResponse:
         if not text or not text.strip():
             raise HTTPException(
                 status_code=500,
@@ -38,7 +40,26 @@ class OpenAIInterface:
                 max_tokens=max_tokens
             )
 
-            return response.choices[0].message.content.strip()
+            summary = response.choices[0].message.content.strip()
+            token_usage_dict = {
+                  "prompt_tokens": response.usage.prompt_tokens,
+                  "completion_tokens": response.usage.completion_tokens,
+                  "total_tokens": response.usage.total_tokens,
+                  "estimated_cost_usd": round(
+                    (response.usage.prompt_tokens * 0.0005 / 1000) +
+                    (response.usage.completion_tokens * 0.0015 / 1000), 6
+                    )
+            }
+            token_usage = TokenUsage.model_validate(token_usage_dict)
+            model = response.model
+            created = datetime.fromtimestamp(response.created, tz=UTC)
+
+            return OpenAISummaryResponse(
+                summary=summary,
+                token_usage=token_usage,
+                model=model,
+                created=created
+            )
 
         except Exception as e:
             raise HTTPException(

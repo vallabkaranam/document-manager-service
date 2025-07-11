@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from app.ml_models.embedding_models import shared_sentence_model
 import httpx
 
+from app.schemas.openai_schemas import OpenAISummaryResponse
 from app.utils.document_utils import extract_text_from_pdf, generate_unique_filename
 
 
@@ -138,7 +139,7 @@ class DocumentController:
             raise e
     
 
-    async def summarize_document_by_document_id(self, document_id: str) -> str:
+    async def summarize_document_by_document_id(self, document_id: str) -> OpenAISummaryResponse:
         try:      
             # Step 1: Get presigned URL from storage path
             presigned_url = self.view_document_by_id(document_id)
@@ -153,9 +154,8 @@ class DocumentController:
             text = extract_text_from_pdf(file_bytes)
 
             # Step 4: Pass to GPT for summarization
-            summary = await self.openai_interface.summarize_text(text)
-
-            return summary
+            response = await self.openai_interface.summarize_text(text)
+            return response
             
         except HTTPException as e:
             raise e
