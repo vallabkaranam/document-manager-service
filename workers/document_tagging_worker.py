@@ -47,25 +47,40 @@ def process_message(message_body: dict):
         text = extract_text_from_pdf(file_content)
         tags = extract_tags(text)
 
+        # Get all existing tags from the database to check for duplicates
         existing_tags = tag_interface.get_all_tags()
         existing_texts = [tag.text for tag in existing_tags]
         associated_tag_ids = set()
 
+        # If there are existing tags, encode them all at once into a tensor
+        # This creates a 2D tensor where each row is an embedding vector for an existing tag
         if existing_texts:
             existing_embeddings = model.encode(existing_texts, convert_to_tensor=True)
 
+        # Process each extracted tag to check for semantic duplicates
         for tag_text in tags:
             matched_tag = None
             if existing_texts:
+                # Encode the current extracted tag into an embedding vector
                 query_embedding = model.encode(tag_text, convert_to_tensor=True)
+                
+                # Calculate cosine similarity between the new extracted tag and all existing tags
+                # This returns similarity scores (0-1) where 1 = identical, 0 = completely different
                 scores = util.pytorch_cos_sim(query_embedding, existing_embeddings)[0]
+                
+                # Find the existing tag with the highest similarity score
                 best_idx = scores.argmax().item()
                 best_score = scores[best_idx].item()
+                
+                # If similarity is >= 0.5, consider it a duplicate and reuse the existing tag
+                # This prevents creating semantically similar tags like "machine learning" vs "Machine Learning"
                 if best_score >= 0.5:
                     matched_tag = existing_tags[best_idx]
 
+            # Use the matched existing tag, or create a new one if no good match found
             tag_obj = matched_tag or tag_interface.create_tag(tag_text)
 
+            # Link the tag to the document (avoid duplicate links)
             if tag_obj.id not in associated_tag_ids:
                 document_tag_interface.link_document_tag(str(document_id), str(tag_obj.id))
                 associated_tag_ids.add(tag_obj.id)
