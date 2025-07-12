@@ -47,7 +47,6 @@ async def get_tags_by_document_id(document_id: str, tag_controller: TagControlle
             detail=f"Unable to get tags for document with id {document_id}: {str(e)}"
         )
 
-
 @router.post("/tags", response_model=Tag)
 async def create_tag(
     tag_request: CreateTagRequest,

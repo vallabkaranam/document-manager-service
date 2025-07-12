@@ -9,13 +9,14 @@ class TagController:
     def __init__(self, tag_interface: TagInterface, cache: Cache):
         self.tag_interface = tag_interface
         self.cache = cache
+        self._tag_cache_key = "tags:all"
 
     def get_all_tags(self) -> List[Tag]:
         try:
             def fetch_tags_from_db():
                 return self.tag_interface.get_all_tags()
             
-            return self.cache.get_or_set("tags:all", fetch_tags_from_db, ttl=600)
+            return self.cache.get_or_set(self._tag_cache_key, fetch_tags_from_db, ttl=600)
 
         except HTTPException as e:
             raise e
@@ -27,6 +28,7 @@ class TagController:
 
     def create_tag(self, tag_text: str) -> Tag:
         try:
+            self.cache.delete(self._tag_cache_key)
             return self.tag_interface.create_tag(tag_text)
         
         except HTTPException as e:
@@ -39,6 +41,7 @@ class TagController:
     
     def delete_tag(self, tag_id: str) -> Tag:
         try:
+            self.cache.delete(self._tag_cache_key)
             return self.tag_interface.delete_tag(tag_id)
         
         except HTTPException as e:
@@ -57,6 +60,7 @@ class TagController:
     
     def partial_update_tag(self, tag_id: str, update_data) -> Tag:
         try:
+            self.cache.delete(self._tag_cache_key)
             return self.tag_interface.update_tag(tag_id, update_data)
         
         except HTTPException as e:
