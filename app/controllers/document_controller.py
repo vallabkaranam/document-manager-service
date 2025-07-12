@@ -138,6 +138,14 @@ class DocumentController:
         except Exception as e:
             raise e
     
+    def unassociate_document_and_tag(self, document_id, tag_id):
+        try:
+            return self.document_tag_interface.unlink_document_tag(document_id, tag_id)
+        
+        except HTTPException as e:
+            raise e
+        except Exception as e:
+            raise e
 
     async def summarize_document_by_document_id(self, document_id: str) -> OpenAISummaryResponse:
         try:      

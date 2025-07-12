@@ -10,6 +10,7 @@ from app.interfaces.queue_interface import QueueInterface
 from app.interfaces.s3_interface import S3Interface
 from app.interfaces.document_interface import DocumentInterface
 from app.schemas.document_schemas import Document, DocumentsResponse, UploadDocumentRequest, DocumentUpdate
+from app.schemas.document_tag_schemas import DocumentTag
 from app.schemas.openai_schemas import OpenAISummaryResponse
 
 router = APIRouter()
@@ -140,7 +141,7 @@ async def delete_document(document_id: str, document_controller: DocumentControl
             detail=f"Failed to delete document: {str(e)}"
         )
     
-@router.post("/documents/{document_id}/tags/{tag_id}")
+@router.post("/documents/{document_id}/tags/{tag_id}", response_model=DocumentTag)
 async def associate_document_and_tag(document_id: str, tag_id: str, document_controller: DocumentController = Depends(get_document_controller)):
     try:
         return document_controller.associate_tag_and_document(document_id, tag_id)
@@ -151,6 +152,19 @@ async def associate_document_and_tag(document_id: str, tag_id: str, document_con
         raise HTTPException(
             status_code=500,
             detail=f"Failed to associate document {document_id} with tag {tag_id}: {str(e)}"
+        )
+
+@router.delete("/documents/{document_id}/tags/{tag_id}", response_model=DocumentTag)
+async def unassociate_document_and_tag(document_id: str, tag_id: str, document_controller: DocumentController = Depends(get_document_controller)):
+    try:
+        return document_controller.unassociate_document_and_tag(document_id, tag_id)
+    
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to unassociate document {document_id} with tag {tag_id}: {str(e)}"
         )
 
 @router.get("/documents/{document_id}/summarize", response_model=OpenAISummaryResponse)
