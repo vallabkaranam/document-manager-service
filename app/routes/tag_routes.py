@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from app.cache.cache import Cache
+from app.cache.redis import redis_client 
 from app.controllers.tag_controller import TagController
 from app.db.session import get_db
 from app.interfaces.tag_interface import TagInterface
@@ -10,10 +12,14 @@ router = APIRouter()
 def get_tag_interface(db: Session = Depends(get_db)) -> TagInterface:
     return TagInterface(db)
 
+def get_cache() -> Cache:
+    return Cache(redis_client)
+
 def get_tag_controller(
-    tag_interface: TagInterface = Depends(get_tag_interface)
+    tag_interface: TagInterface = Depends(get_tag_interface),
+    cache: Cache = Depends(get_cache)
 ) -> TagController:
-    return TagController(tag_interface)
+    return TagController(tag_interface, cache)
 
 @router.get("/tags", response_model=TagsResponse)
 async def get_all_tags(tag_controller: TagController = Depends(get_tag_controller)) -> TagsResponse:

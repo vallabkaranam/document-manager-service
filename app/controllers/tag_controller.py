@@ -1,16 +1,22 @@
 from fastapi import HTTPException
 from typing import List
+from app.cache.cache import Cache
 from app.interfaces.tag_interface import TagInterface
 from app.schemas.tag_schemas import Tag as Tag, TagsResponse
 
 
 class TagController:
-    def __init__(self, tag_interface: TagInterface):
+    def __init__(self, tag_interface: TagInterface, cache: Cache):
         self.tag_interface = tag_interface
+        self.cache = cache
 
     def get_all_tags(self) -> List[Tag]:
         try:
-            return self.tag_interface.get_all_tags()
+            def fetch_tags_from_db():
+                return self.tag_interface.get_all_tags()
+            
+            return self.cache.get_or_set("tags:all", fetch_tags_from_db, ttl=600)
+
         except HTTPException as e:
             raise e
         except Exception as e:
