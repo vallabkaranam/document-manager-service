@@ -17,7 +17,7 @@ class Tag(Base):
     created_at = Column(DateTime(timezone=True), nullable=False, default=func.now())
     updated_at = Column(DateTime(timezone=True), nullable=False, default=func.now())
 
-    embedding = Column(Vector(384))
+    embedding = Column(Vector(384), nullable=True)
 
     # Relationships
     document_tags = relationship("DocumentTag", back_populates="tag", cascade="all, delete-orphan")
