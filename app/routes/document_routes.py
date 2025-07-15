@@ -2,6 +2,8 @@ import os
 from typing import Optional
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
+from app.cache.cache import Cache
+from app.cache.redis import redis_client 
 from app.controllers.document_controller import DocumentController
 from app.db.session import get_db
 from app.interfaces.document_tag_interface import DocumentTagInterface
@@ -35,6 +37,9 @@ def get_openai_interface() -> OpenAIInterface:
 def get_summary_interface(db: Session = Depends(get_db)) -> SummaryInterface:
     return SummaryInterface(db)
 
+def get_cache() -> Cache:
+    return Cache(redis_client)
+
 
 def get_document_controller(
     s3_interface: S3Interface = Depends(get_s3_interface),
@@ -42,9 +47,10 @@ def get_document_controller(
     document_interface: DocumentInterface = Depends(get_document_interface),
     document_tag_interface: DocumentTagInterface = Depends(get_document_tag_interface),
     openai_interface: OpenAIInterface = Depends(get_openai_interface),
-    summary_interface: SummaryInterface = Depends(get_summary_interface)
+    summary_interface: SummaryInterface = Depends(get_summary_interface),
+    cache: Cache = Depends(get_cache)
 ) -> DocumentController:
-    return DocumentController(s3_interface, queue_interface, document_interface, document_tag_interface, openai_interface, summary_interface)
+    return DocumentController(s3_interface, queue_interface, document_interface, document_tag_interface, openai_interface, summary_interface, cache)
 
 @router.get("/documents")
 async def get_documents_by_user_id(user_id: int, document_controller: DocumentController = Depends(get_document_controller)) -> DocumentsResponse:

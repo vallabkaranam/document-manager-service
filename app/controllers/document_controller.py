@@ -8,13 +8,14 @@ from app.utils.document_utils import extract_text_from_pdf, generate_unique_file
 
 
 class DocumentController:
-    def __init__(self, s3_interface, queue_interface, document_interface, document_tag_interface, openai_interface, summary_interface):
+    def __init__(self, s3_interface, queue_interface, document_interface, document_tag_interface, openai_interface, summary_interface, cache):
         self.s3_interface = s3_interface
         self.queue_interface = queue_interface
         self.document_interface = document_interface
         self.document_tag_interface = document_tag_interface
         self.openai_interface = openai_interface
         self.summary_interface = summary_interface
+        self.cache = cache
         self.model = shared_sentence_model
 
     # ✅ 2. Document Upload API
@@ -150,31 +151,34 @@ class DocumentController:
 
     async def summarize_document_by_document_id(self, document_id: str) -> Summary:
         try:
-            summaries = self.summary_interface.get_summaries_by_document_id(document_id)
+            async def summarize_document():
+                summaries = self.summary_interface.get_summaries_by_document_id(document_id)
+                
+                if summaries:
+                    # return the latest summary
+                    return summaries[0]
+                
+                # If no summaries available for document:
+
+                # Step 1: Get presigned URL from storage path
+                presigned_url = self.view_document_by_id(document_id)
+
+                # Step 2: Download file from S3 using async HTTP client
+                async with httpx.AsyncClient() as client:
+                    response = await client.get(presigned_url)
+                    response.raise_for_status()
+
+                # Step 3: Extract bytes and text
+                file_bytes = await response.aread()
+                text = extract_text_from_pdf(file_bytes)
+
+                # Step 4: Pass to GPT for summarization
+                response = await self.openai_interface.summarize_text(text)
+                # Create summary db object
+                created_summary = self.summary_interface.create_summary_by_document_id(document_id, response.summary)
+                return created_summary
             
-            if summaries:
-                # return the latest summary
-                return summaries[0]
-            
-            # If no summaries available for document:
-
-            # Step 1: Get presigned URL from storage path
-            presigned_url = self.view_document_by_id(document_id)
-
-            # Step 2: Download file from S3 using async HTTP client
-            async with httpx.AsyncClient() as client:
-                response = await client.get(presigned_url)
-                response.raise_for_status()
-
-            # Step 3: Extract bytes and text
-            file_bytes = await response.aread()
-            text = extract_text_from_pdf(file_bytes)
-
-            # Step 4: Pass to GPT for summarization
-            response = await self.openai_interface.summarize_text(text)
-            # Create summary db object
-            created_summary = self.summary_interface.create_summary_by_document_id(document_id, response.summary)
-            return created_summary
+            return await self.cache.get_or_set(f"document_summary:{document_id}", summarize_document, ttl=600)
             
         except HTTPException as e:
             raise e

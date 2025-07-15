@@ -11,12 +11,12 @@ class TagController:
         self.cache = cache
         self._tag_cache_key = "tags:all"
 
-    def get_all_tags(self) -> List[Tag]:
+    async def get_all_tags(self) -> List[Tag]:
         try:
             def fetch_tags_from_db():
                 return self.tag_interface.get_all_tags()
             
-            return self.cache.get_or_set(self._tag_cache_key, fetch_tags_from_db, ttl=600)
+            return await self.cache.get_or_set(self._tag_cache_key, fetch_tags_from_db, ttl=600)
 
         except HTTPException as e:
             raise e

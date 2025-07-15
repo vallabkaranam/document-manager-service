@@ -1,15 +1,28 @@
 import json
-from typing import Any, Callable, Optional, List
+import inspect
+import asyncio
+from typing import Any, Callable, Awaitable, Optional, Union
 from redis import Redis
+
+# Type hint for a sync or async fallback function
+FallbackFunc = Union[Callable[[], Any], Callable[[], Awaitable[Any]]]
 
 
 class Cache:
+    """
+    A Redis-based caching utility that supports both synchronous and asynchronous fallback functions,
+    and handles serialization of Pydantic models, UUIDs, and datetimes.
+    """
+
     def __init__(self, client: Redis):
+        """
+        Initialize the Cache instance with a Redis client.
+        """
         self.client = client
 
     def get(self, key: str) -> Optional[Any]:
         """
-        Retrieve a cached value from Redis and deserialize it.
+        Retrieve a cached value from Redis and deserialize it from JSON.
         """
         value = self.client.get(key)
         if value is None:
@@ -38,20 +51,29 @@ class Cache:
         """
         self.client.delete(key)
 
-    def get_or_set(
+    async def get_or_set(
         self,
         key: str,
-        fallback_func: Callable[[], Any],
+        fallback_func: FallbackFunc,
         ttl: int = 600
     ) -> Any:
         """
         Attempt to get a value from the cache.
-        If not found, call `fallback_func`, cache the result, and return it.
+        If not found, call `fallback_func` (sync or async), cache the result, and return it.
+
+        Supports:
+        - async functions (awaited)
+        - sync functions (run in background using asyncio.to_thread)
         """
         cached = self.get(key)
         if cached is not None:
             return cached
 
-        data = fallback_func()
-        self.set(key, data, ttl)
-        return data
+        # Dynamically resolve async or sync fallback
+        if inspect.iscoroutinefunction(fallback_func):
+            result = await fallback_func()
+        else:
+            result = await asyncio.to_thread(fallback_func)
+
+        self.set(key, result, ttl)
+        return result
