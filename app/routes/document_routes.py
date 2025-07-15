@@ -12,9 +12,9 @@ from app.interfaces.queue_interface import QueueInterface
 from app.interfaces.s3_interface import S3Interface
 from app.interfaces.document_interface import DocumentInterface
 from app.interfaces.summary_interface import SummaryInterface
-from app.schemas.document_schemas import Document, DocumentsResponse, UploadDocumentRequest, DocumentUpdate
+from app.interfaces.tag_interface import TagInterface
+from app.schemas.document_schemas import Document, DocumentsResponse, DocumentsSearchRequest, DocumentsSearchResponse, UploadDocumentRequest, DocumentUpdate
 from app.schemas.document_tag_schemas import DocumentTag
-from app.schemas.openai_schemas import OpenAISummaryResponse
 from app.schemas.summary_schemas import Summary
 
 router = APIRouter()
@@ -37,6 +37,9 @@ def get_openai_interface() -> OpenAIInterface:
 def get_summary_interface(db: Session = Depends(get_db)) -> SummaryInterface:
     return SummaryInterface(db)
 
+def get_tag_interface(db: Session = Depends(get_db)) -> TagInterface:
+    return TagInterface(db)
+
 def get_cache() -> Cache:
     return Cache(redis_client)
 
@@ -48,9 +51,10 @@ def get_document_controller(
     document_tag_interface: DocumentTagInterface = Depends(get_document_tag_interface),
     openai_interface: OpenAIInterface = Depends(get_openai_interface),
     summary_interface: SummaryInterface = Depends(get_summary_interface),
+    tag_interface: TagInterface = Depends(get_tag_interface),
     cache: Cache = Depends(get_cache)
 ) -> DocumentController:
-    return DocumentController(s3_interface, queue_interface, document_interface, document_tag_interface, openai_interface, summary_interface, cache)
+    return DocumentController(s3_interface, queue_interface, document_interface, document_tag_interface, openai_interface, summary_interface, tag_interface, cache)
 
 @router.get("/documents")
 async def get_documents_by_user_id(user_id: int, document_controller: DocumentController = Depends(get_document_controller)) -> DocumentsResponse:
@@ -191,4 +195,19 @@ async def summarize_document_by_document_id(document_id: str, document_controlle
             status_code=500,
             detail=f"Failed to summarize document {document_id}: {str(e)}"
         )
+
+@router.post("/documents/search", response_model=DocumentsSearchResponse)
+def search_for_documents(body: DocumentsSearchRequest,document_controller: DocumentController = Depends(get_document_controller)) -> DocumentsSearchResponse:
+
+    try:
+        return document_controller.search_for_documents(body)
+    
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to find similar documents based on the query: {body.query}"
+        )
+
 

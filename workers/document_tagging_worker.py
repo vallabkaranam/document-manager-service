@@ -24,7 +24,7 @@ AWS_REGION = os.getenv("AWS_REGION")
 sqs = boto3.client("sqs", region_name=AWS_REGION)
 s3_interface = S3Interface(os.getenv("S3_BUCKET_NAME"))
 
-async def process_message(message_body: dict):
+def process_message(message_body: dict):
     db: Session = SessionLocal()
     document_interface = DocumentInterface(db)
     tag_interface = TagInterface(db)
@@ -76,7 +76,7 @@ async def process_message(message_body: dict):
             if matched_tag:
                 tag_obj = matched_tag
             else:
-                tag_obj = await tag_interface.create_tag(tag_text)
+                tag_obj = tag_interface.create_tag(tag_text)
                 new_tag_created = True
 
             # Link the tag to the document (avoid duplicate links)
@@ -105,7 +105,8 @@ async def process_message(message_body: dict):
     finally:
         db.close()
 
-async def run_worker():
+
+def run_worker():
     print("🟢 SQS Document Tagging Worker started...")
     while True:
         try:
@@ -121,7 +122,7 @@ async def run_worker():
 
             for msg in messages:
                 message_body = json.loads(msg["Body"])
-                await process_message(message_body)
+                process_message(message_body)
 
                 # Delete message from queue after successful processing
                 sqs.delete_message(
@@ -134,4 +135,4 @@ async def run_worker():
         time.sleep(2)
 
 if __name__ == "__main__":
-    asyncio.run(run_worker())
+    run_worker()

@@ -4,6 +4,7 @@ from datetime import datetime
 from uuid import UUID
 
 from app.db.models.document import TagStatusEnum
+from app.schemas.tag_schemas import SimilarTag
 
 class UploadDocumentRequest(BaseModel):
     filename: Optional[str] = Field(
@@ -34,6 +35,13 @@ class Document(BaseModel):
 
 class DocumentsResponse(BaseModel):
     documents: List[Document]
+
+class DocumentsSearchRequest(BaseModel):
+    query: str
+
+class DocumentsSearchResponse(BaseModel):
+    documents: List[Document]
+    tags: List[SimilarTag]
 
 class DocumentUpdate(BaseModel):
     filename: Optional[str] = None

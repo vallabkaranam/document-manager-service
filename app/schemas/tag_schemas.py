@@ -13,6 +13,9 @@ class Tag(BaseModel):
         "from_attributes": True
     }
 
+class SimilarTag(Tag):
+    distance: float
+
 class TagUpdate(BaseModel):
     id: Optional[UUID] = None
     text: Optional[str] = None

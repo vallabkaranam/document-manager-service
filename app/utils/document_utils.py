@@ -1,4 +1,4 @@
-from app.ml_models.embedding_models import shared_keybert_model
+from app.ml_models.embedding_models import shared_keybert_model, shared_sentence_model
 from typing import List
 from PyPDF2 import PdfReader
 import io
@@ -72,3 +72,6 @@ def generate_unique_filename(filename: str) -> str:
     unique_filename = f"{base_name}_{timestamp}_{unique_id}{extension}"
     
     return unique_filename
+
+def embed_text(text: str) -> list[float]:
+    return shared_sentence_model.encode(text).tolist()

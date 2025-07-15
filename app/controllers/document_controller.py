@@ -3,18 +3,20 @@ from fastapi import HTTPException
 from app.ml_models.embedding_models import shared_sentence_model
 import httpx
 
+from app.schemas.document_schemas import DocumentsSearchResponse
 from app.schemas.summary_schemas import Summary
-from app.utils.document_utils import extract_text_from_pdf, generate_unique_filename
+from app.utils.document_utils import embed_text, extract_text_from_pdf, generate_unique_filename
 
 
 class DocumentController:
-    def __init__(self, s3_interface, queue_interface, document_interface, document_tag_interface, openai_interface, summary_interface, cache):
+    def __init__(self, s3_interface, queue_interface, document_interface, document_tag_interface, openai_interface, summary_interface, tag_interface, cache):
         self.s3_interface = s3_interface
         self.queue_interface = queue_interface
         self.document_interface = document_interface
         self.document_tag_interface = document_tag_interface
         self.openai_interface = openai_interface
         self.summary_interface = summary_interface
+        self.tag_interface = tag_interface
         self.cache = cache
         self.model = shared_sentence_model
 
@@ -186,5 +188,30 @@ class DocumentController:
             raise HTTPException(
                 status_code=500,
                 detail=f"Error summarizing document: {str(e)}"
+            )
+    
+    def search_for_documents(self, request):
+        try:
+            natural_language_query = request.query
+            query_embedding = embed_text(natural_language_query)
+                
+            tags = self.tag_interface.get_similar_tags(query_embedding)
+
+            doc_dict = {}
+            for tag in tags:
+                for doc in self.get_documents_by_tag_id(str(tag.id)):
+                    doc_dict[doc.id] = doc
+
+            documents = list(doc_dict.values())
+
+            return DocumentsSearchResponse(
+                documents=documents,
+                tags=tags
+            )
+        
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"blah: {str(e)}"
             )
         
