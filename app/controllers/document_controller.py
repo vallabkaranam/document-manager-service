@@ -3,17 +3,18 @@ from fastapi import HTTPException
 from app.ml_models.embedding_models import shared_sentence_model
 import httpx
 
-from app.schemas.openai_schemas import OpenAISummaryResponse
+from app.schemas.summary_schemas import Summary
 from app.utils.document_utils import extract_text_from_pdf, generate_unique_filename
 
 
 class DocumentController:
-    def __init__(self, s3_interface, queue_interface, document_interface, document_tag_interface, openai_interface):
+    def __init__(self, s3_interface, queue_interface, document_interface, document_tag_interface, openai_interface, summary_interface):
         self.s3_interface = s3_interface
         self.queue_interface = queue_interface
         self.document_interface = document_interface
         self.document_tag_interface = document_tag_interface
         self.openai_interface = openai_interface
+        self.summary_interface = summary_interface
         self.model = shared_sentence_model
 
     # ✅ 2. Document Upload API
@@ -147,8 +148,16 @@ class DocumentController:
         except Exception as e:
             raise e
 
-    async def summarize_document_by_document_id(self, document_id: str) -> OpenAISummaryResponse:
-        try:      
+    async def summarize_document_by_document_id(self, document_id: str) -> Summary:
+        try:
+            summaries = self.summary_interface.get_summaries_by_document_id(document_id)
+            
+            if summaries:
+                # return the latest summary
+                return summaries[0]
+            
+            # If no summaries available for document:
+
             # Step 1: Get presigned URL from storage path
             presigned_url = self.view_document_by_id(document_id)
 
@@ -163,7 +172,9 @@ class DocumentController:
 
             # Step 4: Pass to GPT for summarization
             response = await self.openai_interface.summarize_text(text)
-            return response
+            # Create summary db object
+            created_summary = self.summary_interface.create_summary_by_document_id(document_id, response.summary)
+            return created_summary
             
         except HTTPException as e:
             raise e

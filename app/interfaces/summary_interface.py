@@ -1,5 +1,5 @@
 import uuid
-from fastapi import HTTPException
+from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from app.db.models.summary import Summary
@@ -11,19 +11,13 @@ class SummaryInterface:
     
     def get_summaries_by_document_id(self, document_id: str):
         document_uuid = uuid.UUID(document_id)
-        summaries = self.db.query(Summary).filter(Summary.document_id == document_uuid).first()
-
-        if not summaries:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Summaries for document {document_id} not found"
-            )
+        summaries = self.db.query(Summary).filter(Summary.document_id == document_uuid).order_by(desc(Summary.created_at)).all()
 
         response = [SummaryPydantic.model_validate(summary) for summary in summaries]
 
         return response
 
-    def create_summary_by_document_id(self, content: str, document_id: str):
+    def create_summary_by_document_id(self, document_id: str, content: str):
         document_uuid = uuid.UUID(document_id)
         summary = Summary(
             content=content,

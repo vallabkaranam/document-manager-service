@@ -9,9 +9,11 @@ from app.interfaces.openai_interface import OpenAIInterface
 from app.interfaces.queue_interface import QueueInterface
 from app.interfaces.s3_interface import S3Interface
 from app.interfaces.document_interface import DocumentInterface
+from app.interfaces.summary_interface import SummaryInterface
 from app.schemas.document_schemas import Document, DocumentsResponse, UploadDocumentRequest, DocumentUpdate
 from app.schemas.document_tag_schemas import DocumentTag
 from app.schemas.openai_schemas import OpenAISummaryResponse
+from app.schemas.summary_schemas import Summary
 
 router = APIRouter()
 
@@ -30,15 +32,19 @@ def get_document_tag_interface(db: Session = Depends(get_db)) -> DocumentTagInte
 def get_openai_interface() -> OpenAIInterface:
     return OpenAIInterface()
 
+def get_summary_interface(db: Session = Depends(get_db)) -> SummaryInterface:
+    return SummaryInterface(db)
+
 
 def get_document_controller(
     s3_interface: S3Interface = Depends(get_s3_interface),
     queue_interface: QueueInterface = Depends(get_queue_interface),
     document_interface: DocumentInterface = Depends(get_document_interface),
     document_tag_interface: DocumentTagInterface = Depends(get_document_tag_interface),
-    openai_interface: OpenAIInterface = Depends(get_openai_interface)
+    openai_interface: OpenAIInterface = Depends(get_openai_interface),
+    summary_interface: SummaryInterface = Depends(get_summary_interface)
 ) -> DocumentController:
-    return DocumentController(s3_interface, queue_interface, document_interface, document_tag_interface, openai_interface)
+    return DocumentController(s3_interface, queue_interface, document_interface, document_tag_interface, openai_interface, summary_interface)
 
 @router.get("/documents")
 async def get_documents_by_user_id(user_id: int, document_controller: DocumentController = Depends(get_document_controller)) -> DocumentsResponse:
@@ -167,8 +173,8 @@ async def unassociate_document_and_tag(document_id: str, tag_id: str, document_c
             detail=f"Failed to unassociate document {document_id} with tag {tag_id}: {str(e)}"
         )
 
-@router.get("/documents/{document_id}/summarize", response_model=OpenAISummaryResponse)
-async def summarize_document_by_document_id(document_id: str, document_controller: DocumentController = Depends(get_document_controller)) -> OpenAISummaryResponse:
+@router.get("/documents/{document_id}/summarize", response_model=Summary)
+async def summarize_document_by_document_id(document_id: str, document_controller: DocumentController = Depends(get_document_controller)) -> Summary:
     try:
         return await document_controller.summarize_document_by_document_id(document_id)
     

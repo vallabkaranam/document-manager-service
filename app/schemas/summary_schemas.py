@@ -8,3 +8,7 @@ class Summary(BaseModel):
     content: str
     created_at: datetime
     document_id: UUID
+
+    model_config = {
+        "from_attributes": True
+    }
