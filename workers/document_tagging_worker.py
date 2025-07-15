@@ -4,6 +4,8 @@ import time
 import json
 import boto3
 from sqlalchemy.orm import Session
+from app.cache.cache import Cache
+from app.cache.redis import redis_client 
 from app.db.session import SessionLocal
 from app.interfaces.s3_interface import S3Interface
 from app.interfaces.document_interface import DocumentInterface
@@ -27,6 +29,7 @@ async def process_message(message_body: dict):
     document_interface = DocumentInterface(db)
     tag_interface = TagInterface(db)
     document_tag_interface = DocumentTagInterface(db)
+    cache = Cache(redis_client)
     model = shared_sentence_model
 
     try:
@@ -54,37 +57,35 @@ async def process_message(message_body: dict):
         associated_tag_ids = set()
 
         # If there are existing tags, encode them all at once into a tensor
-        # This creates a 2D tensor where each row is an embedding vector for an existing tag
         if existing_texts:
             existing_embeddings = model.encode(existing_texts, convert_to_tensor=True)
+
+        new_tag_created = False  # track whether any new tag was created
 
         # Process each extracted tag to check for semantic duplicates
         for tag_text in tags:
             matched_tag = None
             if existing_texts:
-                # Encode the current extracted tag into an embedding vector
                 query_embedding = model.encode(tag_text, convert_to_tensor=True)
-                
-                # Calculate cosine similarity between the new extracted tag and all existing tags
-                # This returns similarity scores (0-1) where 1 = identical, 0 = completely different
                 scores = util.pytorch_cos_sim(query_embedding, existing_embeddings)[0]
-                
-                # Find the existing tag with the highest similarity score
                 best_idx = scores.argmax().item()
                 best_score = scores[best_idx].item()
-                
-                # If similarity is >= 0.5, consider it a duplicate and reuse the existing tag
-                # This prevents creating semantically similar tags like "machine learning" vs "Machine Learning"
                 if best_score >= 0.5:
                     matched_tag = existing_tags[best_idx]
 
-            # Use the matched existing tag, or create a new one if no good match found
-            tag_obj = matched_tag or await tag_interface.create_tag(tag_text)
+            if matched_tag:
+                tag_obj = matched_tag
+            else:
+                tag_obj = await tag_interface.create_tag(tag_text)
+                new_tag_created = True
 
             # Link the tag to the document (avoid duplicate links)
             if tag_obj.id not in associated_tag_ids:
                 document_tag_interface.link_document_tag(str(document_id), str(tag_obj.id))
                 associated_tag_ids.add(tag_obj.id)
+
+        if new_tag_created:
+            cache.delete("tags:all")
 
         print(f"✅ Document {document_id} tagged with {len(associated_tag_ids)} tags.")
         # Set status to completed and tag_status_updated_at to now (UTC)
