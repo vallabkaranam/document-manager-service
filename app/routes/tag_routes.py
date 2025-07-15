@@ -24,7 +24,7 @@ def get_tag_controller(
 @router.get("/tags", response_model=TagsResponse)
 async def get_all_tags(tag_controller: TagController = Depends(get_tag_controller)) -> TagsResponse:
     try:
-        tags = tag_controller.get_all_tags()
+        tags = await tag_controller.get_all_tags()
         return TagsResponse(tags=tags)
     except HTTPException as e:
         raise e
