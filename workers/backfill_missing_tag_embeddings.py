@@ -3,8 +3,9 @@ from app.db.session import SessionLocal
 from app.db.models.tag import Tag
 from app.utils.document_utils import embed_text
 
-def backfill_missing_tag_embeddings():
+def backfill_missing_tag_embeddings() -> None:
     db: Session = SessionLocal()
+    
     try:
         tags_to_update = db.query(Tag).filter(Tag.embedding == None).all()
         print(f"🔧 Found {len(tags_to_update)} tags with null embeddings.")

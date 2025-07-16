@@ -27,7 +27,7 @@ AWS_REGION = os.getenv("AWS_REGION")
 sqs = boto3.client("sqs", region_name=AWS_REGION)
 s3_interface = S3Interface(os.getenv("S3_BUCKET_NAME"))
 
-def process_message(message_body: dict):
+def process_message(message_body: dict) -> None:
     db: Session = SessionLocal()
     document_interface = DocumentInterface(db)
     tag_interface = TagInterface(db)
