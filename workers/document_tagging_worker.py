@@ -13,6 +13,7 @@ from app.interfaces.s3_interface import S3Interface, S3DownloadError
 from app.interfaces.document_interface import DocumentInterface
 from app.interfaces.tag_interface import TagInterface
 from app.interfaces.document_tag_interface import DocumentTagInterface
+from app.schemas.errors import TagCreationError
 from app.utils.document_utils import extract_text_from_pdf, extract_tags
 from app.ml_models.embedding_models import shared_sentence_model
 from sentence_transformers import util
@@ -84,8 +85,12 @@ def process_message(message_body: dict):
             if matched_tag:
                 tag_obj = matched_tag
             else:
-                tag_obj = tag_interface.create_tag(tag_text)
-                new_tag_created = True
+                try:
+                    tag_obj = tag_interface.create_tag(tag_text)
+                    new_tag_created = True
+                except TagCreationError as e:
+                    print(f"⚠️ Failed to create tag '{tag_text}': {str(e)}")
+                    continue  # Skip this tag and move to the next one
 
             # Link the tag to the document (avoid duplicate links)
             if tag_obj.id not in associated_tag_ids:

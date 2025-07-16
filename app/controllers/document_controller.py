@@ -1,7 +1,7 @@
 from urllib.parse import urlparse
 from fastapi import HTTPException
 from app.schemas.errors import (
-    DocumentNotFoundError, DocumentTagLinkError, DocumentTagNotFoundError, TagNotFoundError,
+    DocumentNotFoundError, DocumentTagLinkError, DocumentTagNotFoundError, SimilarTagSearchError, TagNotFoundError,
     OpenAIServiceError, SQSMessageSendError, S3PresignedUrlError, S3UploadError, SummaryCreationError
 )
 from app.ml_models.embedding_models import shared_sentence_model
@@ -123,7 +123,10 @@ class DocumentController:
         except HTTPException as e:
             raise e
         except Exception as e:
-            raise e
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error getting documents by tag id: {str(e)}"
+            ) 
     
     def view_document_by_id(self, document_id):
         try:
@@ -185,7 +188,10 @@ class DocumentController:
         except HTTPException as e:
             raise e
         except Exception as e:
-            raise e
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error associating document and tag: {str(e)}"
+            ) 
     
     def unassociate_document_and_tag(self, document_id, tag_id):
         try:
@@ -206,7 +212,10 @@ class DocumentController:
         except HTTPException as e:
             raise e
         except Exception as e:
-            raise e
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error unassociating document and tag: {str(e)}"
+            ) 
 
     async def summarize_document_by_document_id(self, document_id: str) -> Summary:
         try:
@@ -274,9 +283,18 @@ class DocumentController:
                 tags=tags
             )
         
+        except SimilarTagSearchError as e:
+            raise HTTPException(
+                status_code=500,
+                detail=str(e)
+            )
+        
+        except HTTPException as e:
+            raise e
+        
         except Exception as e:
             raise HTTPException(
                 status_code=500,
-                detail=f"blah: {str(e)}"
+                detail=f"Error searching for similar documents: {str(e)}"
             )
         
