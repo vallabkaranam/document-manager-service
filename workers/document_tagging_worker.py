@@ -19,6 +19,7 @@ from app.ml_models.embedding_models import shared_sentence_model
 from sentence_transformers import util
 from app.db.models.document import TagStatusEnum
 from app.schemas.document_schemas import DocumentUpdate
+from app.db.models.document import DocumentNotFoundError, DocumentUpdateError
 
 QUEUE_URL = os.getenv("SQS_QUEUE_URL")
 AWS_REGION = os.getenv("AWS_REGION")
@@ -40,13 +41,24 @@ def process_message(message_body: dict):
         content_type = message_body["content_type"]
 
         # Set status to processing
-        document_interface.update_document(document_id, DocumentUpdate(tag_status=TagStatusEnum.processing, tag_status_updated_at=datetime.now(timezone.utc)))
-
+        try:
+            document_interface.update_document(document_id, DocumentUpdate(tag_status=TagStatusEnum.processing, tag_status_updated_at=datetime.now(timezone.utc)))
+        except DocumentNotFoundError as e:
+            print(f"❌ Error setting document {document_id} to processing (not found): {str(e)}")
+            return
+        except DocumentUpdateError as e:
+            print(f"❌ Error setting document {document_id} to processing: {str(e)}")
+        
         # Only tag PDFs for now
         if content_type != "application/pdf":
             print(f"Skipping non-PDF file: {content_type}")
             # Set status to skipped
-            document_interface.update_document(document_id, DocumentUpdate(tag_status=TagStatusEnum.skipped, tag_status_updated_at=datetime.now(timezone.utc)))
+            try:
+                document_interface.update_document(document_id, DocumentUpdate(tag_status=TagStatusEnum.skipped, tag_status_updated_at=datetime.now(timezone.utc)))
+            except DocumentNotFoundError as e:
+                print(f"❌ Error setting document {document_id} to skipped (not found): {str(e)}")
+            except DocumentUpdateError as e:
+                print(f"❌ Error setting document {document_id} to skipped: {str(e)}")
             return
 
         try:
@@ -54,7 +66,12 @@ def process_message(message_body: dict):
         except S3DownloadError as e:
             print(f"❌ S3 download error: {str(e)}")
             # Set status to failed
-            document_interface.update_document(document_id, DocumentUpdate(tag_status=TagStatusEnum.failed, tag_status_updated_at=datetime.now(timezone.utc)))
+            try:
+                document_interface.update_document(document_id, DocumentUpdate(tag_status=TagStatusEnum.failed, tag_status_updated_at=datetime.now(timezone.utc)))
+            except DocumentNotFoundError as e:
+                print(f"❌ Error setting document {document_id} to failed after S3 error (not found): {str(e)}")
+            except DocumentUpdateError as e:
+                print(f"❌ Error setting document {document_id} to failed after S3 error: {str(e)}")
             return
 
         text = extract_text_from_pdf(file_content)
@@ -102,17 +119,26 @@ def process_message(message_body: dict):
 
         print(f"✅ Document {document_id} tagged with {len(associated_tag_ids)} tags.")
         # Set status to completed and tag_status_updated_at to now (UTC)
-        document_interface.update_document(
-            document_id,
-            DocumentUpdate(tag_status=TagStatusEnum.completed, tag_status_updated_at=datetime.now(timezone.utc))
-        )
+        try:
+            document_interface.update_document(
+                document_id,
+                DocumentUpdate(tag_status=TagStatusEnum.completed, tag_status_updated_at=datetime.now(timezone.utc))
+            )
+        except DocumentNotFoundError as e:
+            print(f"❌ Error setting document {document_id} to completed (not found): {str(e)}")
+            return
+        except DocumentUpdateError as e:
+            print(f"❌ Error setting document {document_id} to completed: {str(e)}")
 
     except Exception as e:
         print(f"❌ Error processing message: {str(e)}")
         # Set status to failed
         try:
             document_interface.update_document(document_id, DocumentUpdate(tag_status=TagStatusEnum.failed, tag_status_updated_at=datetime.now(timezone.utc)))
-        except Exception as inner_e:
+        except DocumentNotFoundError as inner_e:
+            print(f"❌ Error updating document status to failed (not found): {str(inner_e)}")
+            return
+        except DocumentUpdateError as inner_e:
             print(f"❌ Error updating document status to failed: {str(inner_e)}")
 
     finally:

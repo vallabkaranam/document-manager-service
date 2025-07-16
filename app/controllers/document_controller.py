@@ -1,7 +1,7 @@
 from urllib.parse import urlparse
 from fastapi import HTTPException
 from app.schemas.errors import (
-    DocumentNotFoundError, DocumentTagLinkError, DocumentTagNotFoundError, SimilarTagSearchError, TagNotFoundError,
+    DocumentCreationError, DocumentDeletionError, DocumentNotFoundError, DocumentTagLinkError, DocumentTagNotFoundError, DocumentUpdateError, SimilarTagSearchError, TagNotFoundError,
     OpenAIServiceError, SQSMessageSendError, S3PresignedUrlError, S3UploadError, SummaryCreationError
 )
 from app.ml_models.embedding_models import shared_sentence_model
@@ -82,6 +82,12 @@ class DocumentController:
                 status_code=500,
                 detail=f"Failed to queue document for tagging: {str(e)}"
             )
+        
+        except DocumentCreationError as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to create document: {str(e)}"
+            )
 
         except HTTPException as e:
             raise e
@@ -107,6 +113,12 @@ class DocumentController:
     def get_document_by_document_id(self, document_id):
         try:
             return self.document_interface.get_document_by_id(document_id)
+        
+        except DocumentNotFoundError as e:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Error getting document by id: {str(e)}"
+            )
 
         except HTTPException as e:
             raise e
@@ -119,6 +131,12 @@ class DocumentController:
     def get_documents_by_tag_id(self, tag_id):
         try:
             return self.document_interface.get_documents_by_tag_id(tag_id)
+        
+        except TagNotFoundError as e:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Unable to find tag: {str(e)}"
+            )
         
         except HTTPException as e:
             raise e
@@ -141,6 +159,12 @@ class DocumentController:
 
             # pass that key into generate_presigned_url
             return self.s3_interface.generate_presigned_url(key)
+        
+        except DocumentNotFoundError as e:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Error in getting document by id: {str(e)}"
+            )
 
         except S3PresignedUrlError as e:
             raise HTTPException(
@@ -160,12 +184,43 @@ class DocumentController:
     def partial_update_document(self, document_id, update_data):
         try:
             return self.document_interface.update_document(document_id, update_data)
+        
+        except DocumentNotFoundError as e:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Error updating document: {str(e)}"
+            )
+        
+        except DocumentUpdateError as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error updating document: {str(e)}"
+            )
+        
+        except HTTPException as e:
+            raise e
+                
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error updating document: {str(e)}")
         
     def delete_document(self, document_id):
         try:
             return self.document_interface.delete_document(document_id)
+        
+        except DocumentNotFoundError as e:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Failed to delete document: {str(e)}"
+            )
+        
+        except DocumentDeletionError as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to delete document: {str(e)}"
+            )
+
+        except HTTPException as e:
+            raise e
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error deleting document: {str(e)}")
         
@@ -273,8 +328,12 @@ class DocumentController:
 
             doc_dict = {}
             for tag in tags:
-                for doc in self.get_documents_by_tag_id(str(tag.id)):
-                    doc_dict[doc.id] = doc
+                try:
+                    for doc in self.get_documents_by_tag_id(str(tag.id)):
+                        doc_dict[doc.id] = doc
+                except TagNotFoundError:
+                    print(f"tag {str(tag.id)} not found")
+                    continue
 
             documents = list(doc_dict.values())
 
