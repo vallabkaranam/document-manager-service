@@ -1,5 +1,6 @@
 from urllib.parse import urlparse
 from fastapi import HTTPException
+from app.interfaces.document_tag_interface import DocumentNotFoundError, DocumentTagLinkError, DocumentTagNotFoundError, TagNotFoundError
 from app.interfaces.openai_interface import OpenAIServiceError
 from app.interfaces.queue_interface import SQSMessageSendError
 from app.interfaces.s3_interface import S3PresignedUrlError, S3UploadError
@@ -169,6 +170,18 @@ class DocumentController:
         try:
             return self.document_tag_interface.link_document_tag(document_id, tag_id)
         
+        except (DocumentNotFoundError, TagNotFoundError) as e:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Association failed: {str(e)}"
+                )
+        
+        except DocumentTagLinkError as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Association failed: {str(e)}"
+            )
+        
         except HTTPException as e:
             raise e
         except Exception as e:
@@ -177,6 +190,18 @@ class DocumentController:
     def unassociate_document_and_tag(self, document_id, tag_id):
         try:
             return self.document_tag_interface.unlink_document_tag(document_id, tag_id)
+        
+        except (DocumentNotFoundError, TagNotFoundError, DocumentTagNotFoundError) as e:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Unassociation failed: {str(e)}"
+            )
+
+        except DocumentTagLinkError as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Unassociation failed: {str(e)}"
+            )
         
         except HTTPException as e:
             raise e

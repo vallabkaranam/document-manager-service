@@ -6,6 +6,19 @@ from app.db.models.document_tag import DocumentTag
 from app.db.models.tag import Tag
 from app.schemas.document_tag_schemas import DocumentTag as DocumentTagPydantic
 
+
+class DocumentNotFoundError(Exception):
+    pass
+
+class TagNotFoundError(Exception):
+    pass
+
+class DocumentTagNotFoundError(Exception):
+    pass
+
+class DocumentTagLinkError(Exception):
+    pass
+
 class DocumentTagInterface:
     def __init__(self, db: Session):
         self.db = db
@@ -18,10 +31,10 @@ class DocumentTagInterface:
         tag = self.db.query(Tag).filter(Tag.id == tag_uuid).first()
 
         if not document:
-            raise HTTPException(status_code=404, detail=f"Document {document_id} not found")
+            raise DocumentNotFoundError(f"Document {document_id} not found")
 
         if not tag:
-            raise HTTPException(status_code=404, detail=f"Tag {tag_id} not found")
+            raise TagNotFoundError(f"Tag {tag_id} not found")
 
         existing_link = self.db.query(DocumentTag).filter_by(
             document_id=doc_uuid, tag_id=tag_uuid
@@ -29,12 +42,16 @@ class DocumentTagInterface:
 
         if existing_link:
             return existing_link
-
-        link = DocumentTag(document_id=doc_uuid, tag_id=tag_uuid)
-        self.db.add(link)
-        self.db.commit()
-        self.db.refresh(link)
-        return link 
+        
+        try:
+            link = DocumentTag(document_id=doc_uuid, tag_id=tag_uuid)
+            self.db.add(link)
+            self.db.commit()
+            self.db.refresh(link)
+            return link 
+        
+        except Exception as e:
+            raise DocumentTagLinkError("Failed to link document and tag") from e
     
     def unlink_document_tag(self, document_id: str, tag_id: str):
         # turn str into uuid
@@ -45,35 +62,30 @@ class DocumentTagInterface:
         document = self.db.query(Document).filter(Document.id == doc_uuid).first()
         # if not document raise 404
         if not document:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Unable to find document with id {document_id}"
-            )
+            raise DocumentNotFoundError(f"Unable to find document with id {document_id}")
         
         # get tag
         tag = self.db.query(Tag).filter(Tag.id == tag_uuid).first()
         # if not tag raise 404
         if not tag:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Unable to find tag with id {tag_id}"
-            )
+            raise TagNotFoundError(f"Unable to find tag with id {tag_id}")
 
         # get link
         link = self.db.query(DocumentTag).filter_by(document_id=doc_uuid, tag_id=tag_uuid).first()
         # if not link raise 404
         if not link:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Unable to find association between document with id {document_id} and tag with id {tag_id}"
-            )
+            raise DocumentTagNotFoundError(f"Unable to find association between document with id {document_id} and tag with id {tag_id}")
 
-        # Create response before deleting
-        response = DocumentTagPydantic.model_validate(link)
+        try:
+            # Create response before deleting
+            response = DocumentTagPydantic.model_validate(link)
+            
+            # delete link
+            self.db.delete(link)
+            self.db.commit()
+
+            # return link
+            return response
         
-        # delete link
-        self.db.delete(link)
-        self.db.commit()
-
-        # return link
-        return response
+        except Exception as e:
+            raise DocumentTagLinkError(f"Failed to unlink document and tag: {str(e)}") from e
