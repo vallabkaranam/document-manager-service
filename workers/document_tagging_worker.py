@@ -4,10 +4,12 @@ import time
 import json
 import boto3
 from sqlalchemy.orm import Session
+from datetime import datetime, timezone 
+
 from app.cache.cache import Cache
 from app.cache.redis import redis_client 
 from app.db.session import SessionLocal
-from app.interfaces.s3_interface import S3Interface
+from app.interfaces.s3_interface import S3Interface, S3DownloadError
 from app.interfaces.document_interface import DocumentInterface
 from app.interfaces.tag_interface import TagInterface
 from app.interfaces.document_tag_interface import DocumentTagInterface
@@ -15,7 +17,6 @@ from app.utils.document_utils import extract_text_from_pdf, extract_tags
 from app.ml_models.embedding_models import shared_sentence_model
 from sentence_transformers import util
 from app.db.models.document import TagStatusEnum
-from datetime import datetime, timezone 
 from app.schemas.document_schemas import DocumentUpdate
 
 QUEUE_URL = os.getenv("SQS_QUEUE_URL")
@@ -47,7 +48,14 @@ def process_message(message_body: dict):
             document_interface.update_document(document_id, DocumentUpdate(tag_status=TagStatusEnum.skipped, tag_status_updated_at=datetime.now(timezone.utc)))
             return
 
-        file_content = s3_interface.download_file(s3_url)
+        try:
+            file_content = s3_interface.download_file(s3_url)
+        except S3DownloadError as e:
+            print(f"❌ S3 download error: {str(e)}")
+            # Set status to failed
+            document_interface.update_document(document_id, DocumentUpdate(tag_status=TagStatusEnum.failed, tag_status_updated_at=datetime.now(timezone.utc)))
+            return
+
         text = extract_text_from_pdf(file_content)
         tags = extract_tags(text)
 
