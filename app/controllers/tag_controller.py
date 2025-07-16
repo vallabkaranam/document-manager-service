@@ -3,11 +3,11 @@ from typing import List
 from app.cache.cache import Cache
 from app.interfaces.tag_interface import TagInterface
 from app.schemas.errors import DocumentNotFoundError, TagCreationError, TagDeletionError, TagNotFoundError, TagUpdateError
-from app.schemas.tag_schemas import Tag as Tag, TagsResponse
+from app.schemas.tag_schemas import Tag as Tag, TagUpdate, TagsResponse
 
 
 class TagController:
-    def __init__(self, tag_interface: TagInterface, cache: Cache):
+    def __init__(self, tag_interface: TagInterface, cache: Cache) -> None:
         self.tag_interface = tag_interface
         self.cache = cache
         self._tag_cache_key = "tags:all"
@@ -89,7 +89,7 @@ class TagController:
                 detail=f"Error getting tag by id: {str(e)}"
             )
     
-    def partial_update_tag(self, tag_id: str, update_data) -> Tag:
+    def partial_update_tag(self, tag_id: str, update_data: TagUpdate) -> Tag:
         try:
             self.cache.delete(self._tag_cache_key)
             return self.tag_interface.update_tag(tag_id, update_data)

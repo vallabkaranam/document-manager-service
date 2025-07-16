@@ -1,6 +1,14 @@
 from typing import List
 from urllib.parse import urlparse
 from fastapi import HTTPException, UploadFile
+from app.cache.cache import Cache
+from app.interfaces.document_interface import DocumentInterface
+from app.interfaces.document_tag_interface import DocumentTagInterface
+from app.interfaces.openai_interface import OpenAIInterface
+from app.interfaces.queue_interface import QueueInterface
+from app.interfaces.s3_interface import S3Interface
+from app.interfaces.summary_interface import SummaryInterface
+from app.interfaces.tag_interface import TagInterface
 from app.schemas.document_tag_schemas import DocumentTag
 from app.schemas.errors import (
     DocumentCreationError, DocumentDeletionError, DocumentNotFoundError, DocumentTagLinkError, DocumentTagNotFoundError, DocumentUpdateError, SimilarTagSearchError, TagNotFoundError,
@@ -15,7 +23,16 @@ from app.utils.document_utils import embed_text, extract_text_from_pdf, generate
 
 
 class DocumentController:
-    def __init__(self, s3_interface, queue_interface, document_interface, document_tag_interface, openai_interface, summary_interface, tag_interface, cache):
+    def __init__(self, 
+                 s3_interface: S3Interface, 
+                 queue_interface: QueueInterface, 
+                 document_interface: DocumentInterface, 
+                 document_tag_interface: DocumentTagInterface, 
+                 openai_interface: OpenAIInterface, 
+                 summary_interface: SummaryInterface, 
+                 tag_interface: TagInterface, 
+                 cache: Cache
+                 ) -> None:
         self.s3_interface = s3_interface
         self.queue_interface = queue_interface
         self.document_interface = document_interface
