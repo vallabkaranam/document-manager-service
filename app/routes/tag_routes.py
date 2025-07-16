@@ -26,6 +26,7 @@ async def get_all_tags(tag_controller: TagController = Depends(get_tag_controlle
     try:
         tags = await tag_controller.get_all_tags()
         return TagsResponse(tags=tags)
+    
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -34,11 +35,12 @@ async def get_all_tags(tag_controller: TagController = Depends(get_tag_controlle
             detail=f"Unable to get all tags: {str(e)}"
         )
 
-@router.get("/tags/{document_id}", response_model=TagsResponse)
+@router.get("/documents/{document_id}/tags", response_model=TagsResponse)
 async def get_tags_by_document_id(document_id: str, tag_controller: TagController = Depends(get_tag_controller)) -> TagsResponse:
     try:
         tags = tag_controller.get_tags_by_document_id(document_id)
         return TagsResponse(tags=tags)
+    
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -53,7 +55,9 @@ async def create_tag(
     tag_controller: TagController = Depends(get_tag_controller)
 ) -> Tag:
     try:
-        return tag_controller.create_tag(tag_request.text)
+        tag = tag_controller.create_tag(tag_request.text)
+        return tag
+    
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -68,7 +72,8 @@ async def delete_tag(
     tag_controller: TagController = Depends(get_tag_controller)    
 ) -> Tag:
     try:
-        return tag_controller.delete_tag(tag_id)
+        tag = tag_controller.delete_tag(tag_id)
+        return tag
     
     except HTTPException as e:
         raise e
@@ -84,7 +89,8 @@ async def get_tag_by_id(
     tag_controller: TagController = Depends(get_tag_controller)
 ) -> Tag:
     try:
-        return tag_controller.get_tag_by_id(tag_id)
+        tag = tag_controller.get_tag_by_id(tag_id)
+        return tag
     
     except HTTPException as e:
         raise e
@@ -97,7 +103,8 @@ async def get_tag_by_id(
 @router.patch("/tags/{tag_id}", response_model=Tag)
 async def update_tag(tag_id: str, update_data: TagUpdate, tag_controller: TagController = Depends(get_tag_controller)) -> Tag:
     try:
-        return tag_controller.partial_update_tag(tag_id, update_data)
+        tag = tag_controller.partial_update_tag(tag_id, update_data)
+        return tag
     
     except HTTPException as e:
         raise e
