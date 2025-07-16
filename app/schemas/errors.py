@@ -29,3 +29,15 @@ class DocumentTagNotFoundError(Exception):
 
 class DocumentTagLinkError(Exception):
     pass 
+
+class TagCreationError(Exception):
+    pass
+
+class TagDeletionError(Exception):
+    pass
+
+class TagUpdateError(Exception):
+    pass
+
+class SimilarTagSearchError(Exception):
+    pass

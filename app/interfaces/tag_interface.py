@@ -6,6 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.db.models.document import Document
 from app.db.models.tag import Tag
+from app.schemas.errors import DocumentNotFoundError, SimilarTagSearchError, TagCreationError, TagDeletionError, TagNotFoundError, TagUpdateError
 from app.schemas.tag_schemas import SimilarTag, Tag as TagPydantic, TagsResponse
 from app.utils.document_utils import embed_text
 
@@ -20,37 +21,37 @@ class TagInterface:
     def create_tag(self, tag_text: str) -> TagPydantic:
         embedding = embed_text(tag_text)
         tag = Tag(text=tag_text, embedding=embedding)
-        self.db.add(tag)
-        self.db.commit()
-        self.db.refresh(tag)
-        return TagPydantic(id=tag.id, text=tag.text, created_at=tag.created_at, updated_at=tag.updated_at) 
+        try:
+            self.db.add(tag)
+            self.db.commit()
+            self.db.refresh(tag)
+            return TagPydantic.model_validate(tag)
+        except Exception as e:
+            raise TagCreationError(f"Failed to create tag '{tag_text}': {str(e)}") from e
 
     def delete_tag(self, tag_id: str) -> TagPydantic:
         tag_uuid = uuid.UUID(tag_id)
         tag = self.db.query(Tag).filter(Tag.id == tag_uuid).first()
 
         if not tag:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Tag with id {tag_id} not found"
-            )
+            raise TagNotFoundError(f"Tag with id {tag_id} not found")
 
-        # Create response before deleting
-        response = TagPydantic.model_validate(tag)
-            
-        self.db.delete(tag)
-        self.db.commit()
-        return response
+        try:
+            # Create response before deleting
+            response = TagPydantic.model_validate(tag)
+                
+            self.db.delete(tag)
+            self.db.commit()
+            return response
+        except Exception as e:
+            raise TagDeletionError(f"Failed to delete tag '{tag_id}': {str(e)}") from e
     
     def get_tag_by_id(self, tag_id: str) -> TagPydantic:
         tag_uuid = uuid.UUID(tag_id)
         tag = self.db.query(Tag).filter(Tag.id == tag_uuid).first()
 
         if not tag:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Tag with id {tag_id} not found"
-            )
+            raise TagNotFoundError(f"Tag with id {tag_id} not found")
 
         tag_response = TagPydantic.model_validate(tag)
         return tag_response
@@ -59,28 +60,26 @@ class TagInterface:
         tag_uuid = uuid.UUID(tag_id)
         tag = self.db.query(Tag).filter(Tag.id == tag_uuid).first()
         if not tag:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Tag with id {tag_id} not found"
-            )
+            raise TagNotFoundError(f"Tag with id {tag_id} not found")
         
         for field, value in update_data.dict(exclude_unset=True).items():
             setattr(tag, field, value)
         tag.updated_at = datetime.now(timezone.utc)
         
-        self.db.commit()
-        self.db.refresh(tag)
+        try:
+            self.db.commit()
+            self.db.refresh(tag)
+            
+            return TagPydantic.model_validate(tag)
         
-        return TagPydantic.model_validate(tag)
+        except Exception as e:
+            raise TagUpdateError(f"Failed to update tag '{tag_id}': {str(e)}") from e
 
     def get_tags_by_document_id(self, document_id: str) -> TagsResponse:
         document_uuid = uuid.UUID(document_id)
         document = self.db.query(Document).filter(Document.id == document_uuid).first()
         if not document:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Unable to get document with id {document_id}"
-            )
+            raise DocumentNotFoundError(f"Unable to get document with id {document_id}")
 
         tags = [TagPydantic.model_validate(tag) for tag in document.tags]
 
@@ -94,14 +93,25 @@ class TagInterface:
             ORDER BY embedding <-> (:query_vector)::vector
             LIMIT :top_k
         """)
-        tags_from_db = self.db.execute(sql, {
-            "query_vector": query_embedding,
-            "top_k": top_k
-        }).fetchall()
+
+        try:
+            tags_from_db = self.db.execute(sql, {
+                "query_vector": query_embedding,
+                "top_k": top_k
+            }).fetchall()
+        
+        except Exception as e:
+            raise SimilarTagSearchError(f"Error while fetching similar tags: {str(e)}") from e
+
 
         tags = []
         for row in tags_from_db:
-            tag_obj = self.get_tag_by_id(str(row.id))
+            try:
+                tag_obj = self.get_tag_by_id(str(row.id))
+            except TagNotFoundError as e:
+                print(str(e))
+                continue
+
             tag_dict = tag_obj.model_dump()
             tag_dict["distance"] = row.distance
                                 
