@@ -15,7 +15,7 @@ openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 
 class OpenAIInterface:
-    def __init__(self):
+    def __init__(self) -> None:
         self.model = GPT_MODEL
         self.summary_prompt_template_path = "app/prompt_templates/summarize_bullets.txt"
 

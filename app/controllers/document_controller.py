@@ -82,7 +82,7 @@ class DocumentController:
             
             # Send message to queue for async processing
             self.queue_interface.send_document_tagging_message(
-                document_id=document.id,
+                document_id=str(document.id),
                 s3_url=document.storage_path,
                 content_type=document.content_type
             )

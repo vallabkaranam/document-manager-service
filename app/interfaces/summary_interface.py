@@ -1,3 +1,4 @@
+from typing import List
 import uuid
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
@@ -8,10 +9,10 @@ from app.schemas.errors import SummaryCreationError
 
 
 class SummaryInterface:
-    def __init__(self, db: Session):
+    def __init__(self, db: Session) -> None:
         self.db = db
     
-    def get_summaries_by_document_id(self, document_id: str):
+    def get_summaries_by_document_id(self, document_id: str) -> List[SummaryPydantic]:
         document_uuid = uuid.UUID(document_id)
         summaries = self.db.query(Summary).filter(Summary.document_id == document_uuid).order_by(desc(Summary.created_at)).all()
 
@@ -19,7 +20,7 @@ class SummaryInterface:
 
         return response
 
-    def create_summary_by_document_id(self, document_id: str, content: str):
+    def create_summary_by_document_id(self, document_id: str, content: str) -> SummaryPydantic:
         try:
             document_uuid = uuid.UUID(document_id)
             summary = Summary(
