@@ -56,7 +56,7 @@ def get_document_controller(
 ) -> DocumentController:
     return DocumentController(s3_interface, queue_interface, document_interface, document_tag_interface, openai_interface, summary_interface, tag_interface, cache)
 
-@router.get("/documents")
+@router.get("/documents", response_model=DocumentsResponse)
 async def get_documents_by_user_id(user_id: int, document_controller: DocumentController = Depends(get_document_controller)) -> DocumentsResponse:
     try:
         documents = document_controller.get_documents_by_user_id(user_id)
@@ -70,7 +70,7 @@ async def get_documents_by_user_id(user_id: int, document_controller: DocumentCo
             detail=f"Unable to get documents by user id: {str(e)}"
         )
     
-@router.get("/documents/{tag_id}")
+@router.get("/documents/{tag_id}", response_model=DocumentsResponse)
 async def get_documents_by_tag_id(tag_id: str, document_controller: DocumentController = Depends(get_document_controller)) -> DocumentsResponse:
     try:
         documents = document_controller.get_documents_by_tag_id(tag_id)
@@ -109,7 +109,7 @@ async def view_document_by_id(document_id: str, document_controller: DocumentCon
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Unable to get document by id: {str(e)}"
+            detail=f"Unable to get presigned url for document: {str(e)}"
         )
 
 @router.post("/upload-document", response_model=Document)
@@ -136,7 +136,9 @@ async def upload_document(
 @router.patch("/documents/{document_id}", response_model=Document)
 async def update_document(document_id: str, update_data: DocumentUpdate, document_controller: DocumentController = Depends(get_document_controller)) -> Document:
     try:
-        return document_controller.partial_update_document(document_id, update_data)
+        document = document_controller.partial_update_document(document_id, update_data)
+        return document
+    
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -148,7 +150,9 @@ async def update_document(document_id: str, update_data: DocumentUpdate, documen
 @router.delete("/documents/{document_id}", response_model=Document)
 async def delete_document(document_id: str, document_controller: DocumentController = Depends(get_document_controller)) -> Document:
     try:
-        return document_controller.delete_document(document_id)
+        document = document_controller.delete_document(document_id)
+        return document 
+    
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -158,9 +162,10 @@ async def delete_document(document_id: str, document_controller: DocumentControl
         )
     
 @router.post("/documents/{document_id}/tags/{tag_id}", response_model=DocumentTag)
-async def associate_document_and_tag(document_id: str, tag_id: str, document_controller: DocumentController = Depends(get_document_controller)):
+async def associate_document_and_tag(document_id: str, tag_id: str, document_controller: DocumentController = Depends(get_document_controller)) -> DocumentTag:
     try:
-        return document_controller.associate_tag_and_document(document_id, tag_id)
+        link = document_controller.associate_tag_and_document(document_id, tag_id)
+        return link
     
     except HTTPException as e:
         raise e
@@ -171,9 +176,10 @@ async def associate_document_and_tag(document_id: str, tag_id: str, document_con
         )
 
 @router.delete("/documents/{document_id}/tags/{tag_id}", response_model=DocumentTag)
-async def unassociate_document_and_tag(document_id: str, tag_id: str, document_controller: DocumentController = Depends(get_document_controller)):
+async def unassociate_document_and_tag(document_id: str, tag_id: str, document_controller: DocumentController = Depends(get_document_controller)) -> DocumentTag:
     try:
-        return document_controller.unassociate_document_and_tag(document_id, tag_id)
+        link = document_controller.unassociate_document_and_tag(document_id, tag_id)
+        return link
     
     except HTTPException as e:
         raise e
@@ -186,7 +192,8 @@ async def unassociate_document_and_tag(document_id: str, tag_id: str, document_c
 @router.get("/documents/{document_id}/summarize", response_model=Summary)
 async def summarize_document_by_document_id(document_id: str, document_controller: DocumentController = Depends(get_document_controller)) -> Summary:
     try:
-        return await document_controller.summarize_document_by_document_id(document_id)
+        summary = await document_controller.summarize_document_by_document_id(document_id)
+        return summary
     
     except HTTPException as e:
         raise e
@@ -200,7 +207,8 @@ async def summarize_document_by_document_id(document_id: str, document_controlle
 def search_for_documents(body: DocumentsSearchRequest,document_controller: DocumentController = Depends(get_document_controller)) -> DocumentsSearchResponse:
 
     try:
-        return document_controller.search_for_documents(body)
+        similar_documents_and_tags = document_controller.search_for_documents(body)
+        return similar_documents_and_tags
     
     except HTTPException as e:
         raise e
