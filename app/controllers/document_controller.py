@@ -1,6 +1,6 @@
 from urllib.parse import urlparse
 from fastapi import HTTPException
-from app.interfaces.s3_interface import S3UploadError
+from app.interfaces.s3_interface import S3PresignedUrlError, S3UploadError
 from app.ml_models.embedding_models import shared_sentence_model
 import httpx
 
@@ -117,17 +117,33 @@ class DocumentController:
             raise e
     
     def view_document_by_id(self, document_id):
-        # take doc id and get document
-        document = self.document_interface.get_document_by_id(document_id)
+        try:
+            # take doc id and get document
+            document = self.document_interface.get_document_by_id(document_id)
 
-        # get storage path from doc object
-        storage_path = document.storage_path
-        # parse
-        parsed = urlparse(storage_path)
-        key = parsed.path.lstrip("/") 
+            # get storage path from doc object
+            storage_path = document.storage_path
+            # parse
+            parsed = urlparse(storage_path)
+            key = parsed.path.lstrip("/") 
 
-        # pass that key into generate_presigned_url
-        return self.s3_interface.generate_presigned_url(key)
+            # pass that key into generate_presigned_url
+            return self.s3_interface.generate_presigned_url(key)
+
+        except S3PresignedUrlError as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to generate presigned URL: {str(e)}"
+            )
+
+        except HTTPException as e:
+            raise e
+
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Unexpected error in view_document_by_id: {str(e)}"
+            )
         
     def partial_update_document(self, document_id, update_data):
         try:
