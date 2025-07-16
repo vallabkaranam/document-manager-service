@@ -114,7 +114,7 @@ class TagController:
                 detail=f"Error updating tag: {str(e)}"
             )
         
-    def get_tags_by_document_id(self, document_id: str) -> TagsResponse:
+    def get_tags_by_document_id(self, document_id: str) -> List[Tag]:
         try:
             return self.tag_interface.get_tags_by_document_id(document_id)
         

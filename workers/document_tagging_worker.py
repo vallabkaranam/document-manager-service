@@ -111,7 +111,7 @@ def process_message(message_body: dict):
 
             # Link the tag to the document (avoid duplicate links)
             if tag_obj.id not in associated_tag_ids:
-                document_tag_interface.link_document_tag(str(document_id), str(tag_obj.id))
+                document_tag_interface.link_document_tag(document_id, str(tag_obj.id))
                 associated_tag_ids.add(tag_obj.id)
 
         if new_tag_created:

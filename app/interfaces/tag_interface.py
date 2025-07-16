@@ -75,7 +75,7 @@ class TagInterface:
         except Exception as e:
             raise TagUpdateError(f"Failed to update tag '{tag_id}': {str(e)}") from e
 
-    def get_tags_by_document_id(self, document_id: str) -> TagsResponse:
+    def get_tags_by_document_id(self, document_id: str) -> List[TagPydantic]:
         document_uuid = uuid.UUID(document_id)
         document = self.db.query(Document).filter(Document.id == document_uuid).first()
         if not document:
