@@ -1,5 +1,7 @@
+from typing import List
 from urllib.parse import urlparse
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
+from app.schemas.document_tag_schemas import DocumentTag
 from app.schemas.errors import (
     DocumentCreationError, DocumentDeletionError, DocumentNotFoundError, DocumentTagLinkError, DocumentTagNotFoundError, DocumentUpdateError, SimilarTagSearchError, TagNotFoundError,
     OpenAIServiceError, SQSMessageSendError, S3PresignedUrlError, S3UploadError, SummaryCreationError
@@ -7,7 +9,7 @@ from app.schemas.errors import (
 from app.ml_models.embedding_models import shared_sentence_model
 import httpx
 
-from app.schemas.document_schemas import DocumentsSearchResponse
+from app.schemas.document_schemas import Document, DocumentUpdate, DocumentsSearchRequest, DocumentsSearchResponse, UploadDocumentRequest
 from app.schemas.summary_schemas import Summary
 from app.utils.document_utils import embed_text, extract_text_from_pdf, generate_unique_filename
 
@@ -34,7 +36,7 @@ class DocumentController:
     # On upload, run an ML model (e.g., image classifier or keyword extractor)
     # Automatically attach a list of relevant tags to the document
     # Store tags in a normalized table
-    def upload_document(self, file, document_input):
+    def upload_document(self, file: UploadFile, document_input: UploadDocumentRequest) -> Document:
         # Accepts: file upload (PDF, image, etc.), optional description
 
         # Stores file in S3
@@ -98,7 +100,7 @@ class DocumentController:
                 detail=f"S3 upload error: {str(e)}"
             )
     
-    def get_documents_by_user_id(self, user_id):
+    def get_documents_by_user_id(self, user_id: int) -> List[Document]:
         try:
             return self.document_interface.get_documents_by_user_id(user_id)
         
@@ -110,7 +112,7 @@ class DocumentController:
                 detail=f"Error getting document by user id: {str(e)}"
             )
     
-    def get_document_by_document_id(self, document_id):
+    def get_document_by_document_id(self, document_id: str) -> Document:
         try:
             return self.document_interface.get_document_by_id(document_id)
         
@@ -128,7 +130,7 @@ class DocumentController:
                 detail=f"Error getting document by document id: {str(e)}"
             ) 
     
-    def get_documents_by_tag_id(self, tag_id):
+    def get_documents_by_tag_id(self, tag_id: str) -> List[Document]:
         try:
             return self.document_interface.get_documents_by_tag_id(tag_id)
         
@@ -146,7 +148,7 @@ class DocumentController:
                 detail=f"Error getting documents by tag id: {str(e)}"
             ) 
     
-    def view_document_by_id(self, document_id):
+    def view_document_by_id(self, document_id: str) -> str:
         try:
             # take doc id and get document
             document = self.document_interface.get_document_by_id(document_id)
@@ -181,7 +183,7 @@ class DocumentController:
                 detail=f"Unexpected error in view_document_by_id: {str(e)}"
             )
         
-    def partial_update_document(self, document_id, update_data):
+    def partial_update_document(self, document_id: str, update_data: DocumentUpdate) -> Document:
         try:
             return self.document_interface.update_document(document_id, update_data)
         
@@ -203,7 +205,7 @@ class DocumentController:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error updating document: {str(e)}")
         
-    def delete_document(self, document_id):
+    def delete_document(self, document_id: str) -> Document:
         try:
             return self.document_interface.delete_document(document_id)
         
@@ -224,7 +226,7 @@ class DocumentController:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Error deleting document: {str(e)}")
         
-    def associate_tag_and_document(self, document_id, tag_id):
+    def associate_tag_and_document(self, document_id: str, tag_id: str) -> DocumentTag:
         try:
             return self.document_tag_interface.link_document_tag(document_id, tag_id)
         
@@ -248,7 +250,7 @@ class DocumentController:
                 detail=f"Error associating document and tag: {str(e)}"
             ) 
     
-    def unassociate_document_and_tag(self, document_id, tag_id):
+    def unassociate_document_and_tag(self, document_id: str, tag_id: str) -> DocumentTag:
         try:
             return self.document_tag_interface.unlink_document_tag(document_id, tag_id)
         
@@ -319,7 +321,7 @@ class DocumentController:
                 detail=f"Error summarizing document: {str(e)}"
             )
     
-    def search_for_documents(self, request):
+    def search_for_documents(self, request: DocumentsSearchRequest) -> DocumentsSearchResponse:
         try:
             natural_language_query = request.query
             query_embedding = embed_text(natural_language_query)
