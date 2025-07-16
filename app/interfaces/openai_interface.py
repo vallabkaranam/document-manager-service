@@ -4,6 +4,7 @@ from fastapi import HTTPException
 from openai import AsyncOpenAI
 from app.schemas.openai_schemas import OpenAISummaryResponse, TokenUsage
 from app.utils.prompt_utils import load_prompt_template
+from app.schemas.errors import OpenAIServiceError
 
 # Load API key and model from env
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -12,9 +13,6 @@ GPT_MODEL = os.getenv("GPT_MODEL", "gpt-3.5-turbo-0125")
 # Initialize the async client
 openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
-class OpenAIServiceError(Exception):
-    """Raised when OpenAI API call fails"""
-    pass
 
 class OpenAIInterface:
     def __init__(self):

@@ -2,10 +2,7 @@ import os
 import boto3
 from botocore.exceptions import ClientError
 import json
-
-class SQSMessageSendError(Exception):
-    """Raised when sending an SQS message fails."""
-    pass
+from app.schemas.errors import SQSMessageSendError
 
 class QueueInterface:
     def __init__(self, queue_url: str = os.getenv("SQS_QUEUE_URL"), region_name: str = os.getenv("AWS_REGION")):

@@ -1,10 +1,9 @@
 from urllib.parse import urlparse
 from fastapi import HTTPException
-from app.interfaces.document_tag_interface import DocumentNotFoundError, DocumentTagLinkError, DocumentTagNotFoundError, TagNotFoundError
-from app.interfaces.openai_interface import OpenAIServiceError
-from app.interfaces.queue_interface import SQSMessageSendError
-from app.interfaces.s3_interface import S3PresignedUrlError, S3UploadError
-from app.interfaces.summary_interface import SummaryCreationError
+from app.schemas.errors import (
+    DocumentNotFoundError, DocumentTagLinkError, DocumentTagNotFoundError, TagNotFoundError,
+    OpenAIServiceError, SQSMessageSendError, S3PresignedUrlError, S3UploadError, SummaryCreationError
+)
 from app.ml_models.embedding_models import shared_sentence_model
 import httpx
 

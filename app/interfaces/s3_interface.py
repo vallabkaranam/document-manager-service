@@ -3,15 +3,7 @@ import boto3
 from botocore.exceptions import NoCredentialsError, ClientError
 import os
 import tempfile
-
-class S3UploadError(Exception):
-    pass
-
-class S3DownloadError(Exception):
-    pass
-
-class S3PresignedUrlError(Exception):
-    pass
+from app.schemas.errors import S3UploadError, S3DownloadError, S3PresignedUrlError
 
 
 class S3Interface:

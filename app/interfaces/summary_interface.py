@@ -4,9 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.db.models.summary import Summary
 from app.schemas.summary_schemas import Summary as SummaryPydantic
-
-class SummaryCreationError(Exception):
-    pass
+from app.schemas.errors import SummaryCreationError
 
 
 class SummaryInterface:

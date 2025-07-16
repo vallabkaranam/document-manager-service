@@ -5,19 +5,8 @@ from app.db.models.document import Document
 from app.db.models.document_tag import DocumentTag
 from app.db.models.tag import Tag
 from app.schemas.document_tag_schemas import DocumentTag as DocumentTagPydantic
+from app.schemas.errors import DocumentNotFoundError, TagNotFoundError, DocumentTagNotFoundError, DocumentTagLinkError
 
-
-class DocumentNotFoundError(Exception):
-    pass
-
-class TagNotFoundError(Exception):
-    pass
-
-class DocumentTagNotFoundError(Exception):
-    pass
-
-class DocumentTagLinkError(Exception):
-    pass
 
 class DocumentTagInterface:
     def __init__(self, db: Session):
