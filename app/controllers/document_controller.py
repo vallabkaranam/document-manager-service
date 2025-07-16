@@ -1,5 +1,6 @@
 from urllib.parse import urlparse
 from fastapi import HTTPException
+from app.interfaces.openai_interface import OpenAIServiceError
 from app.interfaces.queue_interface import SQSMessageSendError
 from app.interfaces.s3_interface import S3PresignedUrlError, S3UploadError
 from app.ml_models.embedding_models import shared_sentence_model
@@ -212,9 +213,13 @@ class DocumentController:
                 return created_summary
             
             return await self.cache.get_or_set(f"document_summary:{document_id}", summarize_document, ttl=600)
-            
+
+        except OpenAIServiceError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
         except HTTPException as e:
             raise e
+        
         except Exception as e:
             raise HTTPException(
                 status_code=500,

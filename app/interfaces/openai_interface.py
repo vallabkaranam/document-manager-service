@@ -12,6 +12,10 @@ GPT_MODEL = os.getenv("GPT_MODEL", "gpt-3.5-turbo-0125")
 # Initialize the async client
 openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
+class OpenAIServiceError(Exception):
+    """Raised when OpenAI API call fails"""
+    pass
+
 class OpenAIInterface:
     def __init__(self):
         self.model = GPT_MODEL
@@ -19,10 +23,7 @@ class OpenAIInterface:
 
     async def summarize_text(self, text: str, bullet_points: int = 5, max_tokens: int = 500) -> OpenAISummaryResponse:
         if not text or not text.strip():
-            raise HTTPException(
-                status_code=500,
-                detail="No text found to summarize."
-            )
+            raise OpenAIServiceError("No text found to summarize.")
 
         try:
             # Load and render the prompt template
@@ -62,7 +63,4 @@ class OpenAIInterface:
             )
 
         except Exception as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"OpenAI API error: {str(e)}"
-            )
+            raise OpenAIServiceError(f"OpenAI API error: {str(e)}") from e
