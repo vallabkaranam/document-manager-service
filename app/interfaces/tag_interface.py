@@ -7,11 +7,11 @@ from sqlalchemy.orm import Session
 from app.db.models.document import Document
 from app.db.models.tag import Tag
 from app.schemas.errors import DocumentNotFoundError, SimilarTagSearchError, TagCreationError, TagDeletionError, TagNotFoundError, TagUpdateError
-from app.schemas.tag_schemas import SimilarTag, Tag as TagPydantic, TagsResponse
+from app.schemas.tag_schemas import SimilarTag, Tag as TagPydantic, TagUpdate, TagsResponse
 from app.utils.document_utils import embed_text
 
 class TagInterface:
-    def __init__(self, db: Session):
+    def __init__(self, db: Session) -> None:
         self.db = db
 
     def get_all_tags(self) -> List[TagPydantic]:
@@ -56,7 +56,7 @@ class TagInterface:
         tag_response = TagPydantic.model_validate(tag)
         return tag_response
     
-    def update_tag(self, tag_id: str, update_data) -> TagPydantic:
+    def update_tag(self, tag_id: str, update_data: TagUpdate) -> TagPydantic:
         tag_uuid = uuid.UUID(tag_id)
         tag = self.db.query(Tag).filter(Tag.id == tag_uuid).first()
         if not tag:
@@ -85,7 +85,7 @@ class TagInterface:
 
         return tags
     
-    def get_similar_tags(self, query_embedding: list[float], top_k: int = 5):
+    def get_similar_tags(self, query_embedding: list[float], top_k: int = 5) -> List[SimilarTag]:
         sql = text("""
             SELECT id, text, embedding <-> (:query_vector)::vector AS distance
             FROM tags

@@ -7,7 +7,7 @@ from app.schemas.errors import S3UploadError, S3DownloadError, S3PresignedUrlErr
 
 
 class S3Interface:
-    def __init__(self, bucket_name: str):
+    def __init__(self, bucket_name: str) -> None:
         self.bucket_name = bucket_name
         self.s3_client = boto3.client(
             's3',
@@ -16,7 +16,7 @@ class S3Interface:
             region_name=os.getenv('AWS_REGION')
         )
 
-    def upload_file(self, file_obj, filename: str) -> str:
+    def upload_file(self, file_obj: bytes, filename: str) -> str:
         """
         Uploads a file-like object to S3 and returns the S3 URL path.
         """
