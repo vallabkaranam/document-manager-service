@@ -5,6 +5,10 @@ from sqlalchemy.orm import Session
 from app.db.models.summary import Summary
 from app.schemas.summary_schemas import Summary as SummaryPydantic
 
+class SummaryCreationError(Exception):
+    pass
+
+
 class SummaryInterface:
     def __init__(self, db: Session):
         self.db = db
@@ -18,14 +22,18 @@ class SummaryInterface:
         return response
 
     def create_summary_by_document_id(self, document_id: str, content: str):
-        document_uuid = uuid.UUID(document_id)
-        summary = Summary(
-            content=content,
-            document_id=document_uuid
-        )
-        self.db.add(summary)
-        self.db.commit()
-        self.db.refresh(summary)
+        try:
+            document_uuid = uuid.UUID(document_id)
+            summary = Summary(
+                content=content,
+                document_id=document_uuid
+            )
+            self.db.add(summary)
+            self.db.commit()
+            self.db.refresh(summary)
 
-        return SummaryPydantic.model_validate(summary)
+            return SummaryPydantic.model_validate(summary)
+        
+        except Exception as e:
+            raise SummaryCreationError(f"Failed to create summary for document {document_id}: {str(e)}") from e
 

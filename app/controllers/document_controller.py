@@ -4,6 +4,7 @@ from app.interfaces.document_tag_interface import DocumentNotFoundError, Documen
 from app.interfaces.openai_interface import OpenAIServiceError
 from app.interfaces.queue_interface import SQSMessageSendError
 from app.interfaces.s3_interface import S3PresignedUrlError, S3UploadError
+from app.interfaces.summary_interface import SummaryCreationError
 from app.ml_models.embedding_models import shared_sentence_model
 import httpx
 
@@ -233,11 +234,15 @@ class DocumentController:
 
                 # Step 4: Pass to GPT for summarization
                 response = await self.openai_interface.summarize_text(text)
+
                 # Create summary db object
                 created_summary = self.summary_interface.create_summary_by_document_id(document_id, response.summary)
                 return created_summary
             
             return await self.cache.get_or_set(f"document_summary:{document_id}", summarize_document, ttl=600)
+        
+        except SummaryCreationError as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
         except OpenAIServiceError as e:
             raise HTTPException(status_code=500, detail=str(e))
