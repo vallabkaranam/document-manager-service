@@ -41,3 +41,12 @@ class TagUpdateError(Exception):
 
 class SimilarTagSearchError(Exception):
     pass
+
+class DocumentCreationError(Exception):
+    pass
+
+class DocumentUpdateError(Exception):
+    pass
+
+class DocumentDeletionError(Exception):
+    pass
