@@ -1,5 +1,6 @@
 from urllib.parse import urlparse
 from fastapi import HTTPException
+from app.interfaces.queue_interface import SQSMessageSendError
 from app.interfaces.s3_interface import S3PresignedUrlError, S3UploadError
 from app.ml_models.embedding_models import shared_sentence_model
 import httpx
@@ -57,7 +58,7 @@ class DocumentController:
                 size=file.size,
                 description=document_input.description
             )
-
+            
             # Send message to queue for async processing
             self.queue_interface.send_document_tagging_message(
                 document_id=document.id,
@@ -72,6 +73,12 @@ class DocumentController:
             raise HTTPException(
                 status_code=500,
                 detail=f"Failed to upload file to storage: {str(e)}"
+            )
+
+        except SQSMessageSendError as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to queue document for tagging: {str(e)}"
             )
 
         except HTTPException as e:

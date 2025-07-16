@@ -130,7 +130,7 @@ async def upload_document(
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to upload document: {str(e)}"
+            detail=f"Error while uploading document: {str(e)}"
         )
     
 @router.patch("/documents/{document_id}", response_model=Document)

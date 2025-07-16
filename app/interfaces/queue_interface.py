@@ -1,6 +1,11 @@
 import os
 import boto3
+from botocore.exceptions import ClientError
 import json
+
+class SQSMessageSendError(Exception):
+    """Raised when sending an SQS message fails."""
+    pass
 
 class QueueInterface:
     def __init__(self, queue_url: str = os.getenv("SQS_QUEUE_URL"), region_name: str = os.getenv("AWS_REGION")):
@@ -8,14 +13,18 @@ class QueueInterface:
         self.queue_url = queue_url
 
     def send_document_tagging_message(self, document_id: int, s3_url: str, content_type: str):
-        message_body = {
-            "document_id": str(document_id),
-            "s3_url": s3_url,
-            "content_type": content_type
-        }
+        try:
+            message_body = {
+                "document_id": str(document_id),
+                "s3_url": s3_url,
+                "content_type": content_type
+            }
 
-        response = self.sqs.send_message(
-            QueueUrl=self.queue_url,
-            MessageBody=json.dumps(message_body)
-        )
-        return response
+            response = self.sqs.send_message(
+                QueueUrl=self.queue_url,
+                MessageBody=json.dumps(message_body)
+            )
+            return response
+        
+        except ClientError as e:
+            raise SQSMessageSendError(f"Failed to send message to SQS for document_id={document_id}") from e
