@@ -4,6 +4,16 @@ from botocore.exceptions import NoCredentialsError, ClientError
 import os
 import tempfile
 
+class S3UploadError(Exception):
+    pass
+
+class S3DownloadError(Exception):
+    pass
+
+class S3PresignedUrlError(Exception):
+    pass
+
+
 class S3Interface:
     def __init__(self, bucket_name: str):
         self.bucket_name = bucket_name
@@ -37,9 +47,10 @@ class S3Interface:
 
             # Return the correct S3 URL format
             return f"s3://{self.bucket_name}/{filename}"
+
         except (NoCredentialsError, ClientError) as e:
-            raise Exception(f"S3 upload failed: {e}") 
-        
+            raise S3UploadError(f"Failed to upload file '{filename}' to S3") from e
+
     def download_file(self, s3_url: str) -> bytes:
         parsed = urlparse(s3_url)
 
@@ -49,10 +60,12 @@ class S3Interface:
         try:
             response = self.s3_client.get_object(Bucket=bucket, Key=key)
             return response["Body"].read()
-        except self.s3_client.exceptions.NoSuchKey:
-            raise Exception(f"The key '{key}' does not exist in bucket '{bucket}'.")
+
+        except self.s3_client.exceptions.NoSuchKey as e:
+            raise S3DownloadError(f"S3 key '{key}' not found in bucket '{bucket}'") from e
+
         except (NoCredentialsError, ClientError) as e:
-            raise Exception(f"S3 download failed: {e}")
+            raise S3DownloadError(f"Failed to download file from S3: {s3_url}") from e
 
     def generate_presigned_url(self, key: str, expires_in: int = 300) -> str:
         """
@@ -76,4 +89,4 @@ class S3Interface:
             )
             return url
         except ClientError as e:
-            raise Exception(f"Failed to generate presigned URL: {e}")
+            raise S3PresignedUrlError(f"Failed to generate presigned URL for key '{key}'") from e

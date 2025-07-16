@@ -1,5 +1,6 @@
 from urllib.parse import urlparse
 from fastapi import HTTPException
+from app.interfaces.s3_interface import S3UploadError
 from app.ml_models.embedding_models import shared_sentence_model
 import httpx
 
@@ -66,9 +67,16 @@ class DocumentController:
 
             # Instead of waiting for tagging, return early        
             return document
+        
+        except S3UploadError as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to upload file to storage: {str(e)}"
+            )
 
         except HTTPException as e:
             raise e
+        
         except Exception as e:
             raise HTTPException(
                 status_code=500,
