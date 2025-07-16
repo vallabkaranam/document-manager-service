@@ -9,10 +9,10 @@ from app.schemas.errors import DocumentNotFoundError, TagNotFoundError, Document
 
 
 class DocumentTagInterface:
-    def __init__(self, db: Session):
+    def __init__(self, db: Session) -> None:
         self.db = db
 
-    def link_document_tag(self, document_id: str, tag_id: str):
+    def link_document_tag(self, document_id: str, tag_id: str) -> DocumentTagPydantic:
         doc_uuid = uuid.UUID(document_id)
         tag_uuid = uuid.UUID(tag_id)
 
@@ -30,19 +30,19 @@ class DocumentTagInterface:
         ).first()
 
         if existing_link:
-            return existing_link
+            return DocumentTagPydantic.model_validate(existing_link)
         
         try:
             link = DocumentTag(document_id=doc_uuid, tag_id=tag_uuid)
             self.db.add(link)
             self.db.commit()
             self.db.refresh(link)
-            return link 
+            return DocumentTagPydantic.model_validate(link) 
         
         except Exception as e:
             raise DocumentTagLinkError("Failed to link document and tag") from e
     
-    def unlink_document_tag(self, document_id: str, tag_id: str):
+    def unlink_document_tag(self, document_id: str, tag_id: str) -> DocumentTagPydantic:
         # turn str into uuid
         doc_uuid = uuid.UUID(document_id)
         tag_uuid = uuid.UUID(tag_id)

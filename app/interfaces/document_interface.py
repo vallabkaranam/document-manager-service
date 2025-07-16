@@ -4,13 +4,13 @@ import uuid
 from sqlalchemy.orm import Session
 from app.db.models.document import Document
 from app.db.models.tag import Tag
-from app.schemas.document_schemas import Document as DocumentPydantic, DocumentsResponse
+from app.schemas.document_schemas import Document as DocumentPydantic, DocumentUpdate, DocumentsResponse
 from datetime import datetime, timezone
 
 from app.schemas.errors import DocumentCreationError, DocumentDeletionError, DocumentNotFoundError, DocumentUpdateError, TagNotFoundError
 
 class DocumentInterface:
-    def __init__(self, db: Session):
+    def __init__(self, db: Session) -> None:
         self.db = db
 
     def create_document(self, 
@@ -101,7 +101,7 @@ class DocumentInterface:
         documents = [DocumentPydantic.model_validate(document) for document in tag.documents]
         return documents
 
-    def update_document(self, document_id: str, update_data):
+    def update_document(self, document_id: str, update_data: DocumentUpdate) -> DocumentPydantic:
         doc_uuid = uuid.UUID(document_id)
         document = self.db.query(Document).filter(Document.id == doc_uuid).first()
         if not document:
