@@ -44,6 +44,10 @@ def extract_tags(text: str, num_tags: int = 5) -> List[str]:
     if not text or text.strip() == "":
         return []
 
+    #   These params make the extracted tags more relevant, diverse, and descriptive.
+    # - stop_words='english': Removes common words (like 'the', 'is', 'and') so only meaningful words/phrases are considered.
+    # - use_maxsum=True: Ensures the selected keywords are not only relevant but also as different from each other as possible (avoids repetitive keywords).
+    # - keyphrase_ngram_range=(1, 2): Allows extraction of both single words and short phrases (e.g., 'apple', 'apple pie').
     keywords = shared_keybert_model.extract_keywords(
         text,
         keyphrase_ngram_range=(1, 2),
