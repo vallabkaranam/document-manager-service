@@ -110,6 +110,7 @@ class TagInterface:
             raise TagNotFoundError(f"Tag with id {tag_id} not found")
 
         try:
+            # Create response before deleting
             response = TagPydantic.model_validate(tag)
             self.db.delete(tag)
             self.db.commit()
