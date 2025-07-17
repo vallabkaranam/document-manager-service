@@ -201,7 +201,7 @@ async def view_document_by_id(document_id: str, document_controller: DocumentCon
         raise HTTPException(status_code=500, detail=f"Unable to get presigned url for document: {str(e)}")
 
 
-@router.post("/upload-document", response_model=Document)
+@router.post("/documents", response_model=Document)
 async def upload_document(
     file: UploadFile = File(...),
     filename: Optional[str] = Form(None),
@@ -265,6 +265,10 @@ async def delete_document(document_id: str, document_controller: DocumentControl
 
     Returns:
         Document: Metadata of the deleted document.
+    
+    Notes:
+        Also deletes all associated summaries, tag relationships, and metadata.
+        Underlying S3 object is not deleted though.
     """
     try:
         document = document_controller.delete_document(document_id)
@@ -307,6 +311,10 @@ async def unassociate_document_and_tag(document_id: str, tag_id: str, document_c
 
     Returns:
         DocumentTag: The association object removed.
+
+    Notes:
+        Only deletes the link between the document and tag.
+        The tag and document remain intact unless independently deleted.
     """
     try:
         link = document_controller.unassociate_document_and_tag(document_id, tag_id)
