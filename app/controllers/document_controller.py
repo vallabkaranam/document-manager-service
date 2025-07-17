@@ -19,7 +19,7 @@ Key Capabilities:
 - Perform semantic search using vector embeddings
 
 Assumptions:
-- Uploads are PDF-compatible (text extracted via `pdfminer`)
+- Uploads are PDF-compatible (text extracted via `PyPDF2`)
 - Only the latest summary per document is returned
 - Document metadata and S3 paths are stored centrally
 - Caching uses a time-to-live of 10 minutes
