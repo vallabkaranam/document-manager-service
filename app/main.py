@@ -5,7 +5,7 @@ from app.routes import document_routes, tag_routes
 app = FastAPI(
     title="Document Manager API",
     version="0.1.0",
-    description="An API for uploading documents, auto-tagging them, and managing metadata.",
+    description="An API for uploading documents, auto-tagging them, summarizing them, finding similar documents, and managing metadata.",
 )
 
 # Include routers
