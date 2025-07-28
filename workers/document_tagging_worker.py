@@ -52,7 +52,7 @@ from app.ml_models.embedding_models import shared_sentence_model
 from sentence_transformers import util
 from app.db.models.document import TagStatusEnum
 from app.schemas.document_schemas import DocumentUpdate
-from app.db.models.document import DocumentNotFoundError, DocumentUpdateError
+from app.schemas.errors import DocumentNotFoundError, DocumentUpdateError
 
 QUEUE_URL = os.getenv("SQS_QUEUE_URL")
 AWS_REGION = os.getenv("AWS_REGION")
