@@ -1,0 +1,135 @@
+{
+ "Resources": {
+  "EmbeddingQueue10B64CA8": {
+   "Type": "AWS::SQS::Queue",
+   "Properties": {
+    "QueueName": "EmbeddingQueue"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "InfrastructureStack/EmbeddingQueue/Resource"
+   }
+  },
+  "EmbeddingQueuePolicy0810342E": {
+   "Type": "AWS::SQS::QueuePolicy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "sqs:SendMessage",
+        "sqs:GetQueueAttributes",
+        "sqs:GetQueueUrl"
+       ],
+       "Condition": {
+        "ArnEquals": {
+         "aws:SourceArn": {
+          "Fn::GetAtt": [
+           "DocumentReadyRule14E79719",
+           "Arn"
+          ]
+         }
+        }
+       },
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "events.amazonaws.com"
+       },
+       "Resource": {
+        "Fn::GetAtt": [
+         "EmbeddingQueue10B64CA8",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "Queues": [
+     {
+      "Ref": "EmbeddingQueue10B64CA8"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "InfrastructureStack/EmbeddingQueue/Policy/Resource"
+   }
+  },
+  "DocumentReadyRule14E79719": {
+   "Type": "AWS::Events::Rule",
+   "Properties": {
+    "EventPattern": {
+     "detail-type": [
+      "DocumentReady"
+     ],
+     "source": [
+      "document-manager-service"
+     ]
+    },
+    "State": "ENABLED",
+    "Targets": [
+     {
+      "Arn": "arn:aws:sqs:us-east-1:640168435590:document-tagging-queue",
+      "Id": "Target0"
+     },
+     {
+      "Arn": {
+       "Fn::GetAtt": [
+        "EmbeddingQueue10B64CA8",
+        "Arn"
+       ]
+      },
+      "Id": "Target1"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "InfrastructureStack/DocumentReadyRule/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/zPSMzIw0zNQTCwv1k1OydbNyUzSqw4uSUzO1gEKxVcXFxbrVQeWppamOiUWp+qAWTrOaXkQBpgMyM/JTK6EC0K4tTqpZal5JUDNQaU5YB0gura2ViegsiQjP0/fWM/QUM9SMas4M1O3qDSvJDM3VS8IQgMAF++BU5QAAAA="
+   },
+   "Metadata": {
+    "aws:cdk:path": "InfrastructureStack/CDKMetadata/Default"
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}
