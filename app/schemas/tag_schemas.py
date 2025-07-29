@@ -4,23 +4,23 @@ from datetime import datetime
 from uuid import UUID
 
 class Tag(BaseModel):
-    id: UUID
-    text: str
-    created_at: datetime
-    updated_at: datetime
+    id: UUID = Field(..., description="Unique identifier for the tag")
+    text: str = Field(..., description="The text content of the tag")
+    created_at: datetime = Field(..., description="Timestamp when the tag was created")
+    updated_at: datetime = Field(..., description="Timestamp when the tag was last updated")
     
     model_config = {
         "from_attributes": True
     }
 
 class SimilarTag(Tag):
-    distance: float
+    distance: float = Field(..., description="Similarity distance score for the tag")
 
 class TagUpdate(BaseModel):
-    id: Optional[UUID] = None
-    text: Optional[str] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    id: Optional[UUID] = Field(None, description="Unique identifier for the tag")
+    text: Optional[str] = Field(None, description="The text content of the tag")
+    created_at: Optional[datetime] = Field(None, description="Timestamp when the tag was created")
+    updated_at: Optional[datetime] = Field(None, description="Timestamp when the tag was last updated")
 
 class CreateTagRequest(BaseModel):
     text: str = Field(
@@ -29,4 +29,4 @@ class CreateTagRequest(BaseModel):
     )
 
 class TagsResponse(BaseModel):
-    tags: List[Tag] 
+    tags: List[Tag] = Field(..., description="List of tags") 

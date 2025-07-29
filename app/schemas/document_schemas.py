@@ -17,39 +17,39 @@ class UploadDocumentRequest(BaseModel):
                              example="Description of the filename")
     
 class Document(BaseModel):
-    id: UUID
-    filename: str
-    storage_path: str
-    content_type: str
-    size: int
-    upload_time: datetime
-    updated_at: datetime
-    description: Optional[str] = None
-    user_id: int
-    tag_status: TagStatusEnum
-    tag_status_updated_at: datetime
+    id: UUID = Field(..., description="Unique identifier for the document")
+    filename: str = Field(..., description="The name of the file")
+    storage_path: str = Field(..., description="The storage path where the file is located")
+    content_type: str = Field(..., description="The MIME type of the file")
+    size: int = Field(..., description="The size of the file in bytes")
+    upload_time: datetime = Field(..., description="Timestamp when the document was uploaded")
+    updated_at: datetime = Field(..., description="Timestamp when the document was last updated")
+    description: Optional[str] = Field(None, description="Optional description of the document")
+    user_id: int = Field(..., description="ID of the user who uploaded the document")
+    tag_status: TagStatusEnum = Field(..., description="Current status of document tagging")
+    tag_status_updated_at: datetime = Field(..., description="Timestamp when the tag status was last updated")
     
     model_config = {
         "from_attributes": True
     }
 
 class DocumentsResponse(BaseModel):
-    documents: List[Document]
+    documents: List[Document] = Field(..., description="List of documents")
 
 class DocumentsSearchRequest(BaseModel):
-    query: str
+    query: str = Field(..., description="Search query string")
 
 class DocumentsSearchResponse(BaseModel):
-    documents: List[Document]
-    tags: List[SimilarTag]
+    documents: List[Document] = Field(..., description="List of documents matching the search")
+    tags: List[SimilarTag] = Field(..., description="List of similar tags found during search")
 
 class DocumentUpdate(BaseModel):
-    filename: Optional[str] = None
-    storage_path: Optional[str] = None
-    content_type: Optional[str] = None
-    size: Optional[int] = None
-    description: Optional[str] = None
-    user_id: Optional[int] = None
-    tag_status: Optional[TagStatusEnum] = None
-    tag_status_updated_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    filename: Optional[str] = Field(None, description="The name of the file")
+    storage_path: Optional[str] = Field(None, description="The storage path where the file is located")
+    content_type: Optional[str] = Field(None, description="The MIME type of the file")
+    size: Optional[int] = Field(None, description="The size of the file in bytes")
+    description: Optional[str] = Field(None, description="Optional description of the document")
+    user_id: Optional[int] = Field(None, description="ID of the user who uploaded the document")
+    tag_status: Optional[TagStatusEnum] = Field(None, description="Current status of document tagging")
+    tag_status_updated_at: Optional[datetime] = Field(None, description="Timestamp when the tag status was last updated")
+    updated_at: Optional[datetime] = Field(None, description="Timestamp when the document was last updated")
