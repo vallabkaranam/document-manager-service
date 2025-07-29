@@ -15,6 +15,14 @@ class TagStatusEnum(str, enum.Enum):
     failed = "failed"
     skipped = "skipped"
 
+
+class EmbeddingStatusEnum(str, enum.Enum):
+    pending = "pending"
+    processing = "processing"
+    completed = "completed"
+    failed = "failed"
+    skipped = "skipped"
+
 class Document(Base):
     __tablename__ = "documents"
 
@@ -29,6 +37,8 @@ class Document(Base):
     user_id = Column(Integer, nullable=False, index=True)
     tag_status = Column(Enum(TagStatusEnum), nullable=False, default=TagStatusEnum.pending)
     tag_status_updated_at = Column(DateTime(timezone=True), nullable=False, default=func.now())
+    embedding_status = Column(Enum(EmbeddingStatusEnum), nullable=False, default=EmbeddingStatusEnum.pending)
+    embedding_status_updated_at = Column(DateTime(timezone=True), nullable=False, default=func.now())
 
     # Relationships
     document_tags = relationship("DocumentTag", back_populates="document", cascade="all, delete-orphan")

@@ -69,3 +69,19 @@ class DocumentUpdateError(Exception):
 class DocumentDeletionError(Exception):
     """Raised when deleting a document from the database fails."""
     pass
+
+class DocumentEmbeddingCreationError(Exception):
+    """Raised when creating or updating a document embedding fails."""
+    pass
+
+class DocumentEmbeddingNotFoundError(Exception):
+    """Raised when a document embedding cannot be found in the database."""
+    pass
+
+class DocumentEmbeddingUpdateError(Exception):
+    """Raised when updating a document embedding fails."""
+    pass
+
+class SimilarDocumentSearchError(Exception):
+    """Raised when searching for similar documents using embeddings fails."""
+    pass

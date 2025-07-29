@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 from uuid import UUID
 
-from app.db.models.document import TagStatusEnum
+from app.db.models.document import TagStatusEnum, EmbeddingStatusEnum
 from app.schemas.tag_schemas import SimilarTag
 
 class UploadDocumentRequest(BaseModel):
@@ -28,6 +28,8 @@ class Document(BaseModel):
     user_id: int = Field(..., description="ID of the user who uploaded the document")
     tag_status: TagStatusEnum = Field(..., description="Current status of document tagging")
     tag_status_updated_at: datetime = Field(..., description="Timestamp when the tag status was last updated")
+    embedding_status: EmbeddingStatusEnum = Field(..., description="Current status of document embedding")
+    embedding_status_updated_at: datetime = Field(..., description="Timestamp when the embedding status was last updated")
     
     model_config = {
         "from_attributes": True
@@ -52,4 +54,6 @@ class DocumentUpdate(BaseModel):
     user_id: Optional[int] = Field(None, description="ID of the user who uploaded the document")
     tag_status: Optional[TagStatusEnum] = Field(None, description="Current status of document tagging")
     tag_status_updated_at: Optional[datetime] = Field(None, description="Timestamp when the tag status was last updated")
+    embedding_status: Optional[EmbeddingStatusEnum] = Field(None, description="Current status of document embedding")
+    embedding_status_updated_at: Optional[datetime] = Field(None, description="Timestamp when the embedding status was last updated")
     updated_at: Optional[datetime] = Field(None, description="Timestamp when the document was last updated")

@@ -14,7 +14,6 @@ Assumptions:
 - All inputs and outputs are validated Pydantic models
 """
 
-from fastapi import HTTPException
 from typing import List, Optional
 import uuid
 from sqlalchemy.orm import Session

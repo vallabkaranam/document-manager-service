@@ -14,7 +14,6 @@ Assumptions:
 """
 
 import uuid
-from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from app.db.models.document import Document
 from app.db.models.document_tag import DocumentTag

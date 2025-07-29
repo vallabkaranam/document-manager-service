@@ -17,7 +17,6 @@ Assumptions:
 
 from datetime import UTC, datetime
 import os
-from fastapi import HTTPException
 from openai import AsyncOpenAI
 from app.schemas.openai_schemas import OpenAISummaryResponse, TokenUsage
 from app.utils.prompt_utils import load_prompt_template

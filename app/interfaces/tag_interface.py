@@ -20,7 +20,6 @@ from datetime import datetime, timezone
 from typing import List
 import uuid
 
-from fastapi import HTTPException
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
