@@ -69,6 +69,7 @@ class EventBridgeInterface:
                     }
                 ]
             )
+            print(f"[EventBridge] Emitted event: {response}")
             return response
         except ClientError as e:
             raise EventBridgeEmitError(f"Failed to emit DocumentReady event for document_id={document_id}") from e 

@@ -1,5 +1,61 @@
 {
  "Resources": {
+  "TaggingQueue9DE83EC6": {
+   "Type": "AWS::SQS::Queue",
+   "Properties": {
+    "QueueName": "TaggingQueue"
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "InfrastructureStack/TaggingQueue/Resource"
+   }
+  },
+  "TaggingQueuePolicy3DB6471E": {
+   "Type": "AWS::SQS::QueuePolicy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "sqs:SendMessage",
+        "sqs:GetQueueAttributes",
+        "sqs:GetQueueUrl"
+       ],
+       "Condition": {
+        "ArnEquals": {
+         "aws:SourceArn": {
+          "Fn::GetAtt": [
+           "DocumentReadyRule14E79719",
+           "Arn"
+          ]
+         }
+        }
+       },
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "events.amazonaws.com"
+       },
+       "Resource": {
+        "Fn::GetAtt": [
+         "TaggingQueue9DE83EC6",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "Queues": [
+     {
+      "Ref": "TaggingQueue9DE83EC6"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "InfrastructureStack/TaggingQueue/Policy/Resource"
+   }
+  },
   "EmbeddingQueue10B64CA8": {
    "Type": "AWS::SQS::Queue",
    "Properties": {
@@ -70,7 +126,12 @@
     "State": "ENABLED",
     "Targets": [
      {
-      "Arn": "arn:aws:sqs:us-east-1:640168435590:document-tagging-queue",
+      "Arn": {
+       "Fn::GetAtt": [
+        "TaggingQueue9DE83EC6",
+        "Arn"
+       ]
+      },
       "Id": "Target0"
      },
      {
@@ -91,7 +152,7 @@
   "CDKMetadata": {
    "Type": "AWS::CDK::Metadata",
    "Properties": {
-    "Analytics": "v2:deflate64:H4sIAAAAAAAA/zPSMzIw0zNQTCwv1k1OydbNyUzSqw4uSUzO1gEKxVcXFxbrVQeWppamOiUWp+qAWTrOaXkQBpgMyM/JTK6EC0K4tTqpZal5JUDNQaU5YB0gura2ViegsiQjP0/fWM/QUM9SMas4M1O3qDSvJDM3VS8IQgMAF++BU5QAAAA="
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/zPSMzIw0zNQTCwv1k1OydbNyUzSqw4uSUzO1gEKxVcXFxbrVQeWppam6jin5UEYYDIgPyczuRIuCOHW6qSWpeaVALUEleaAdYDo2tpanYDKkoz8PH1jPUNDPUvFrOLMTN2i0rySzNxUvSAIDQA0FzSoigAAAA=="
    },
    "Metadata": {
     "aws:cdk:path": "InfrastructureStack/CDKMetadata/Default"

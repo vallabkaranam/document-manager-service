@@ -9,7 +9,7 @@ Key Capabilities:
 - Ensure validation and exception safety across operations
 
 Assumptions:
-- Environment variables SQS_QUEUE_URL and AWS_REGION are configured
+- Environment variables TAGGING_SQS_QUEUE_URL and AWS_REGION are configured
 - All inputs and outputs are validated
 """
 
@@ -25,7 +25,7 @@ class QueueInterface:
     Provides an abstraction over SQS operations, ensuring consistent error handling
     and encapsulating all SQS-related logic behind a single class.
     """
-    def __init__(self, queue_url: str = os.getenv("SQS_QUEUE_URL"), region_name: str = os.getenv("AWS_REGION")) -> None:
+    def __init__(self, queue_url: str = os.getenv("TAGGING_SQS_QUEUE_URL"), region_name: str = os.getenv("AWS_REGION")) -> None:
         """
         Initializes the SQS interface with a specified queue URL and AWS region.
 

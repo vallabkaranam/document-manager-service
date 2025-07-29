@@ -28,7 +28,7 @@ Assumptions:
 - SentenceTransformer is loaded via shared singleton
 - Redis cache is used with `Cache(redis_client)`
 - Tag deduplication threshold is `cos_sim >= 0.5`
-- SQS message body is a dict with keys: `document_id`, `s3_url`, `content_type`
+- SQS message body is a dict with keys: `detail: { document_id, s3_url, content_type }`
 """
 
 import asyncio
@@ -54,7 +54,7 @@ from app.db.models.document import TagStatusEnum
 from app.schemas.document_schemas import DocumentUpdate
 from app.schemas.errors import DocumentNotFoundError, DocumentUpdateError
 
-QUEUE_URL = os.getenv("SQS_QUEUE_URL")
+QUEUE_URL = os.getenv("TAGGING_SQS_QUEUE_URL")
 AWS_REGION = os.getenv("AWS_REGION")
 
 sqs = boto3.client("sqs", region_name=AWS_REGION)
@@ -174,7 +174,7 @@ def process_message(message_body: dict) -> None:
         print(f"❌ Error processing message: {str(e)}")
         try:
             document_interface.update_document(
-                document_id,
+                message_body.get("document_id"),
                 DocumentUpdate(tag_status=TagStatusEnum.failed, tag_status_updated_at=datetime.now(timezone.utc))
             )
         except (DocumentNotFoundError, DocumentUpdateError) as e2:
@@ -203,7 +203,14 @@ def run_worker():
 
             for msg in messages:
                 message_body = json.loads(msg["Body"])
-                process_message(message_body)
+                event_detail = message_body.get("detail")
+
+                if not event_detail:
+                    print(f"⚠️ Skipping malformed message: {json.dumps(message_body)}")
+                    continue
+
+                print(f"📥 Received message: {json.dumps(event_detail)}")
+                process_message(event_detail)
 
                 # Delete message from queue after successful processing
                 sqs.delete_message(

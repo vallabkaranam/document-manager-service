@@ -1,4 +1,3 @@
-import os
 from aws_cdk import (
     Stack,
     aws_sqs as sqs,
@@ -11,15 +10,14 @@ class InfrastructureStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        # Import existing TaggingQueue from ARN (via env var)
-        tagging_queue_arn = os.getenv("TAGGING_QUEUE_ARN")
-        tagging_queue = sqs.Queue.from_queue_arn(
+        # Create new TaggingQueue managed by CDK
+        tagging_queue = sqs.Queue(
             self,
-            "ImportedTaggingQueue",
-            tagging_queue_arn
+            "TaggingQueue",
+            queue_name="TaggingQueue"
         )
 
-        # Create new EmbeddingQueue
+        # Create new EmbeddingQueue managed by CDK
         embedding_queue = sqs.Queue(
             self,
             "EmbeddingQueue",

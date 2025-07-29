@@ -18,7 +18,7 @@
         "validateOnSynth": false,
         "assumeRoleArn": "arn:${AWS::Partition}:iam::640168435590:role/cdk-hnb659fds-deploy-role-640168435590-us-east-1",
         "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::640168435590:role/cdk-hnb659fds-cfn-exec-role-640168435590-us-east-1",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-640168435590-us-east-1/495ce629ca85f1fda9f33711048d5aeefcca5f5409e6979b7118b20a0fef1126.json",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-640168435590-us-east-1/7acd3e8742ca161e1b0f0d69fcdbe9545184907dc026b7fa4ab9f792bf9f7942.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
@@ -34,6 +34,18 @@
         "InfrastructureStack.assets"
       ],
       "metadata": {
+        "/InfrastructureStack/TaggingQueue/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TaggingQueue9DE83EC6"
+          }
+        ],
+        "/InfrastructureStack/TaggingQueue/Policy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "TaggingQueuePolicy3DB6471E"
+          }
+        ],
         "/InfrastructureStack/EmbeddingQueue/Resource": [
           {
             "type": "aws:cdk:logicalId",
