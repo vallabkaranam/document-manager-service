@@ -15,6 +15,7 @@ class Tag(BaseModel):
 
 class SimilarTag(Tag):
     distance: float = Field(..., description="Similarity distance score for the tag")
+    similarity_score: float = Field(..., description="Similarity score (0-1, higher is more similar)")
 
 class TagUpdate(BaseModel):
     id: Optional[UUID] = Field(None, description="Unique identifier for the tag")

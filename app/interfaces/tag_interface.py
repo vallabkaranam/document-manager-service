@@ -65,12 +65,13 @@ class TagInterface:
             for tag in tags
         ]
 
-    def create_tag(self, tag_text: str) -> TagPydantic:
+    def create_tag(self, tag_text: str, embedding_vector: List[float]) -> TagPydantic:
         """
-        Creates a new tag with an embedding.
+        Creates a new tag with the provided embedding vector.
 
         Args:
             tag_text (str): The text of the tag to create.
+            embedding_vector (List[float]): Pre-computed embedding vector.
 
         Returns:
             TagPydantic: The created tag.
@@ -78,8 +79,7 @@ class TagInterface:
         Raises:
             TagCreationError: If the tag creation fails.
         """
-        embedding = embed_text(tag_text)
-        tag = Tag(text=tag_text, embedding=embedding)
+        tag = Tag(text=tag_text, embedding=embedding_vector)
         try:
             self.db.add(tag)
             self.db.commit()
@@ -235,6 +235,7 @@ class TagInterface:
 
             tag_dict = tag_obj.model_dump()
             tag_dict["distance"] = row.distance
+            tag_dict["similarity_score"] = 1.0 / (1.0 + row.distance)
             tag = SimilarTag.model_validate(tag_dict)
             tags.append(tag)
 

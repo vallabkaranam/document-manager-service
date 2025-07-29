@@ -75,15 +75,15 @@ class DocumentEmbeddingInterface:
 
         return DocumentEmbeddingPydantic.model_validate(embedding)
 
-    def create_embedding(
-        self, document_id: str, text_content: str
+    def create_document_embedding(
+        self, document_id: str, embedding_vector: List[float]
     ) -> DocumentEmbeddingPydantic:
         """
-        Creates a new document embedding from raw text.
+        Creates a new document embedding with the provided embedding vector.
 
         Args:
             document_id (str): UUID string of the document.
-            text_content (str): Raw text to embed.
+            embedding_vector (List[float]): Pre-computed embedding vector.
 
         Returns:
             DocumentEmbeddingPydantic: The created embedding.
@@ -108,8 +108,6 @@ class DocumentEmbeddingInterface:
                 f"Embedding already exists for document {document_id}"
             )
 
-        embedding_vector = embed_text(text_content)
-
         try:
             new_embedding = DocumentEmbedding(
                 document_id=document_uuid,
@@ -125,14 +123,14 @@ class DocumentEmbeddingInterface:
             ) from e
 
     def update_embedding(
-        self, document_id: str, text_content: str
+        self, document_id: str, embedding_vector: List[float]
     ) -> DocumentEmbeddingPydantic:
         """
-        Updates an existing document embedding with new text.
+        Updates an existing document embedding with a new embedding vector.
 
         Args:
             document_id (str): UUID string of the document.
-            text_content (str): New text to re-embed.
+            embedding_vector (List[float]): New embedding vector.
 
         Returns:
             DocumentEmbeddingPydantic: The updated embedding.
@@ -153,10 +151,8 @@ class DocumentEmbeddingInterface:
                 f"No existing embedding to update for document {document_id}"
             )
 
-        new_embedding_vector = embed_text(text_content)
-
         try:
-            existing.embedding = new_embedding_vector
+            existing.embedding = embedding_vector
             self.db.commit()
             self.db.refresh(existing)
             return DocumentEmbeddingPydantic.model_validate(existing)

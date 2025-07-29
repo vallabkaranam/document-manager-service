@@ -35,6 +35,7 @@ from app.schemas.errors import (
     TagUpdateError
 )
 from app.schemas.tag_schemas import Tag as Tag, TagUpdate
+from app.utils.document_utils import embed_text
 
 
 class TagController:
@@ -83,7 +84,8 @@ class TagController:
         """
         try:
             self.cache.delete(self._tag_cache_key)
-            return self.tag_interface.create_tag(tag_text)
+            embedding_vector = embed_text(tag_text)
+            return self.tag_interface.create_tag(tag_text, embedding_vector)
         
         except TagCreationError as e:
             raise HTTPException(

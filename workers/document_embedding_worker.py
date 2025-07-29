@@ -20,7 +20,8 @@ Key Capabilities:
 
 Assumptions:
 - Only `application/pdf` files are embedded
-- SentenceTransformer is loaded via shared singleton
+- Worker handles business logic (embedding generation)
+- Interfaces handle data access only
 - Embeddings are stored in the `document_embeddings` table (dim=384)
 - SQS message body is a dict with keys: `detail: { document_id, s3_url, content_type }`
 """
@@ -39,7 +40,7 @@ from app.interfaces.document_interface import DocumentInterface
 from app.interfaces.document_embedding_interface import DocumentEmbeddingInterface
 from app.interfaces.s3_interface import S3Interface, S3DownloadError
 from app.ml_models.embedding_models import shared_sentence_model
-from app.utils.document_utils import extract_text_from_pdf
+from app.utils.document_utils import extract_text_from_pdf, embed_text
 from app.schemas.errors import DocumentNotFoundError, DocumentUpdateError
 
 QUEUE_URL = os.getenv("EMBEDDING_SQS_QUEUE_URL")
@@ -126,14 +127,12 @@ def process_message(message_body: dict) -> None:
                 print(f"❌ Error marking empty-text document as skipped: {str(e)}")
             return
 
-        # Step 5: Generate embedding
-        embedding = model.encode(text)
-
-        # Step 6: Store in DB
-        embedding_interface.create_document_embedding(document_id=document_id, embedding=embedding)
+        # Step 5: Generate embedding and store in DB
+        embedding_vector = embed_text(text)
+        embedding_interface.create_document_embedding(document_id=document_id, embedding_vector=embedding_vector)
         print(f"✅ Stored embedding for document {document_id}.")
 
-        # Step 7: Mark as completed
+        # Step 6: Mark as completed
         try:
             document_interface.update_document(
                 document_id,

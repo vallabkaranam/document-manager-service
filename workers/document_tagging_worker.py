@@ -17,7 +17,7 @@ Key Capabilities:
 - Downloads PDF documents from S3
 - Extracts text using `PyPDF2`
 - Generates tag candidates using KeyBERT-like extractors
-- Deduplicates semantically using SentenceTransformer similarity
+- Deduplicates semantically using embedding generation
 - Creates new tags (if no match) and links them to the document
 - Updates Redis cache if tag space is modified
 - Handles and logs errors gracefully
@@ -25,9 +25,10 @@ Key Capabilities:
 
 Assumptions:
 - Only `application/pdf` files are tagged
-- SentenceTransformer is loaded via shared singleton
+- Worker handles business logic (embedding generation)
+- Interfaces handle data access only
 - Redis cache is used with `Cache(redis_client)`
-- Tag deduplication threshold is `cos_sim >= 0.5`
+- Tag deduplication threshold is `similarity_score >= 0.5`
 - SQS message body is a dict with keys: `detail: { document_id, s3_url, content_type }`
 """
 
@@ -47,9 +48,7 @@ from app.interfaces.document_interface import DocumentInterface
 from app.interfaces.tag_interface import TagInterface
 from app.interfaces.document_tag_interface import DocumentTagInterface
 from app.schemas.errors import TagCreationError
-from app.utils.document_utils import extract_text_from_pdf, extract_tags
-from app.ml_models.embedding_models import shared_sentence_model
-from sentence_transformers import util
+from app.utils.document_utils import extract_text_from_pdf, extract_tags, embed_text
 from app.db.models.document import TagStatusEnum
 from app.schemas.document_schemas import DocumentUpdate
 from app.schemas.errors import DocumentNotFoundError, DocumentUpdateError
@@ -70,7 +69,6 @@ def process_message(message_body: dict) -> None:
     tag_interface = TagInterface(db)
     document_tag_interface = DocumentTagInterface(db)
     cache = Cache(redis_client)
-    model = shared_sentence_model
 
     try:
         document_id = message_body["document_id"]
@@ -119,39 +117,33 @@ def process_message(message_body: dict) -> None:
         text = extract_text_from_pdf(file_content)
         tags = extract_tags(text)
 
-        # Get all existing tags from the database to check for duplicates
-        existing_tags = tag_interface.get_all_tags()
-        existing_texts = [tag.text for tag in existing_tags]
+        # Process each extracted tag to check for semantic duplicates
         associated_tag_ids = set()
-
-        # If there are existing tags, encode them all at once into a tensor
-        if existing_texts:
-            existing_embeddings = model.encode(existing_texts, convert_to_tensor=True)
-
         new_tag_created = False  # track whether any new tag was created
 
-        # Process each extracted tag to check for semantic duplicates
         for tag_text in tags:
-            matched_tag = None
-            if existing_texts:
-                query_embedding = model.encode(tag_text, convert_to_tensor=True)
-                scores = util.pytorch_cos_sim(query_embedding, existing_embeddings)[0]
-                best_idx = scores.argmax().item()
-                best_score = scores[best_idx].item()
-                if best_score >= 0.5:
-                    matched_tag = existing_tags[best_idx]
+            # Generate embedding for similarity comparison
+            tag_embedding = embed_text(tag_text)
+            similar_tags = tag_interface.get_similar_tags(tag_embedding, top_k=1)
+            
+            matched_similar_tag = None
+            if similar_tags and similar_tags[0].similarity_score >= 0.5:
+                matched_similar_tag = similar_tags[0]
 
-            if matched_tag:
-                tag_obj = matched_tag
+            if matched_similar_tag:
+                # Use the existing tag (SimilarTag is a subclass of Tag)
+                tag_obj = matched_similar_tag
             else:
                 try:
-                    tag_obj = tag_interface.create_tag(tag_text)
+                    # Create a new tag
+                    tag_obj = tag_interface.create_tag(tag_text, tag_embedding)
                     new_tag_created = True
                 except TagCreationError as e:
                     print(f"⚠️ Failed to create tag '{tag_text}': {str(e)}")
                     continue  # Skip this tag and move to the next one
 
             # Link the tag to the document (avoid duplicate links)
+            # tag_obj can be either SimilarTag (existing) or Tag (new), both have .id
             if tag_obj.id not in associated_tag_ids:
                 document_tag_interface.link_document_tag(document_id, str(tag_obj.id))
                 associated_tag_ids.add(tag_obj.id)
