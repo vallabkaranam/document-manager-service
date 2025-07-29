@@ -11,7 +11,7 @@ injected at initialization.
 
 Key Capabilities:
 - Upload documents to S3 and create DB entries
-- Trigger ML-based auto-tagging via SQS
+- Trigger ML-based auto-tagging via EventBridge events
 - Retrieve documents by user, tag, or ID
 - Generate secure presigned URLs
 - Manage document-tag relationships
@@ -32,14 +32,14 @@ from app.cache.cache import Cache
 from app.interfaces.document_interface import DocumentInterface
 from app.interfaces.document_tag_interface import DocumentTagInterface
 from app.interfaces.openai_interface import OpenAIInterface
-from app.interfaces.queue_interface import QueueInterface
+from app.interfaces.eventbridge_interface import EventBridgeInterface
 from app.interfaces.s3_interface import S3Interface
 from app.interfaces.summary_interface import SummaryInterface
 from app.interfaces.tag_interface import TagInterface
 from app.schemas.document_tag_schemas import DocumentTag
 from app.schemas.errors import (
     DocumentCreationError, DocumentDeletionError, DocumentNotFoundError, DocumentTagLinkError, DocumentTagNotFoundError, DocumentUpdateError, SimilarTagSearchError, TagNotFoundError,
-    OpenAIServiceError, SQSMessageSendError, S3PresignedUrlError, S3UploadError, SummaryCreationError
+    OpenAIServiceError, EventBridgeEmitError, S3PresignedUrlError, S3UploadError, SummaryCreationError
 )
 from app.ml_models.embedding_models import shared_sentence_model
 import httpx
@@ -55,7 +55,7 @@ class DocumentController:
 
     Args:
         s3_interface (S3Interface): Handles storage and retrieval of document files.
-        queue_interface (QueueInterface): Sends async messages to the tagging worker.
+        eventbridge_interface (EventBridgeInterface): Emits events for document processing.
         document_interface (DocumentInterface): Database CRUD for documents.
         document_tag_interface (DocumentTagInterface): Manages document-tag associations.
         openai_interface (OpenAIInterface): Summarizes text using GPT models.
@@ -66,7 +66,7 @@ class DocumentController:
     
     def __init__(self, 
                  s3_interface: S3Interface, 
-                 queue_interface: QueueInterface, 
+                 eventbridge_interface: EventBridgeInterface, 
                  document_interface: DocumentInterface, 
                  document_tag_interface: DocumentTagInterface, 
                  openai_interface: OpenAIInterface, 
@@ -75,7 +75,7 @@ class DocumentController:
                  cache: Cache
                  ) -> None:
         self.s3_interface = s3_interface
-        self.queue_interface = queue_interface
+        self.eventbridge_interface = eventbridge_interface
         self.document_interface = document_interface
         self.document_tag_interface = document_tag_interface
         self.openai_interface = openai_interface
@@ -87,7 +87,7 @@ class DocumentController:
 
     def upload_document(self, file: UploadFile, document_input: UploadDocumentRequest) -> Document:
         """
-        Uploads a document to S3, stores metadata in DB, and queues for auto-tagging.
+        Uploads a document to S3, stores metadata in DB, and emits event for auto-tagging.
 
         Args:
             file (UploadFile): The uploaded file object (PDF, image, etc.).
@@ -97,12 +97,12 @@ class DocumentController:
             Document: Metadata of the created document.
 
         Raises:
-            HTTPException: If any step fails (S3, DB, SQS).
+            HTTPException: If any step fails (S3, DB, EventBridge).
 
         Behavior:
             - Stores file in S3
             - Creates document entry in DB
-            - Sends tagging job to background queue
+            - Emits DocumentReady event for background processing
         """
         try:
             file_content = file.file.read()
@@ -125,8 +125,8 @@ class DocumentController:
                 description=document_input.description
             )
             
-            # Send message to queue for async processing
-            self.queue_interface.send_document_tagging_message(
+            # Emit event for async document processing
+            self.eventbridge_interface.emit_document_ready_event(
                 document_id=str(document.id),
                 s3_url=document.storage_path,
                 content_type=document.content_type
@@ -135,7 +135,7 @@ class DocumentController:
             # Instead of waiting for tagging, return early        
             return document
         
-        except (S3UploadError, SQSMessageSendError, DocumentCreationError) as e:
+        except (S3UploadError, EventBridgeEmitError, DocumentCreationError) as e:
             raise HTTPException(status_code=500, detail=str(e))
 
         except HTTPException as e:

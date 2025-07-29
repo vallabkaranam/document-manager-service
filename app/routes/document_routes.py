@@ -13,7 +13,7 @@ semantically clear interactions for tools and agents.
 
 Assumptions:
 - User authentication is currently not enforced (e.g., hardcoded user_id=1)
-- Tagging relies on a background async worker and queue-based processing
+- Tagging relies on a background async worker and event-driven processing via EventBridge
 """
 
 import os
@@ -31,7 +31,7 @@ from app.controllers.document_controller import DocumentController
 from app.interfaces.document_interface import DocumentInterface
 from app.interfaces.document_tag_interface import DocumentTagInterface
 from app.interfaces.openai_interface import OpenAIInterface
-from app.interfaces.queue_interface import QueueInterface
+from app.interfaces.eventbridge_interface import EventBridgeInterface
 from app.interfaces.s3_interface import S3Interface
 from app.interfaces.summary_interface import SummaryInterface
 from app.interfaces.tag_interface import TagInterface
@@ -59,9 +59,9 @@ def get_s3_interface() -> S3Interface:
     """Injects the S3 interface with bucket name from env."""
     return S3Interface(os.getenv("S3_BUCKET_NAME"))
 
-def get_queue_interface() -> QueueInterface:
-    """Injects the SQS queue interface with queue URL from env."""
-    return QueueInterface(os.getenv("SQS_QUEUE_URL"))
+def get_eventbridge_interface() -> EventBridgeInterface:
+    """Injects the EventBridge interface for emitting document processing events."""
+    return EventBridgeInterface()
 
 def get_document_interface(db: Session = Depends(get_db)) -> DocumentInterface:
     """Injects the document DB interface."""
@@ -89,7 +89,7 @@ def get_cache() -> Cache:
 
 def get_document_controller(
     s3_interface: S3Interface = Depends(get_s3_interface),
-    queue_interface: QueueInterface = Depends(get_queue_interface),
+    eventbridge_interface: EventBridgeInterface = Depends(get_eventbridge_interface),
     document_interface: DocumentInterface = Depends(get_document_interface),
     document_tag_interface: DocumentTagInterface = Depends(get_document_tag_interface),
     openai_interface: OpenAIInterface = Depends(get_openai_interface),
@@ -105,7 +105,7 @@ def get_document_controller(
     """
     return DocumentController(
         s3_interface,
-        queue_interface,
+        eventbridge_interface,
         document_interface,
         document_tag_interface,
         openai_interface,
@@ -222,7 +222,7 @@ async def upload_document(
     Behavior:
         - Uploads to S3
         - Stores metadata in DB
-        - Queues tagging job
+        - Emits DocumentReady event for tagging
     """
     request = UploadDocumentRequest(filename=filename, description=description)
     try:
