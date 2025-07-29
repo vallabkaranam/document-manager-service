@@ -34,3 +34,4 @@ class Document(Base):
     document_tags = relationship("DocumentTag", back_populates="document", cascade="all, delete-orphan")
     tags = relationship("Tag", secondary="document_tags", back_populates="documents", overlaps="document_tags,tag")
     summaries = relationship("Summary", back_populates="document", cascade="all, delete-orphan")
+    embeddings = relationship("DocumentEmbedding", back_populates="document", cascade="all, delete-orphan")
