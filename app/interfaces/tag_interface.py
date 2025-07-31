@@ -210,7 +210,7 @@ class TagInterface:
             The query returns tags with non-null embeddings ordered by similarity.
         """
         sql = text("""
-            SELECT id, text, embedding <-> (:query_vector)::vector AS distance
+            SELECT id, embedding <-> (:query_vector)::vector AS distance
             FROM tags
             WHERE embedding IS NOT NULL
             ORDER BY embedding <-> (:query_vector)::vector
@@ -218,15 +218,15 @@ class TagInterface:
         """)
 
         try:
-            tags_from_db = self.db.execute(sql, {
+            results = self.db.execute(sql, {
                 "query_vector": query_embedding,
                 "top_k": top_k
             }).fetchall()
         except Exception as e:
             raise SimilarTagSearchError(f"Error while fetching similar tags: {str(e)}") from e
 
-        tags = []
-        for row in tags_from_db:
+        similar_tags = []
+        for row in results:
             try:
                 tag_obj = self.get_tag_by_id(str(row.id))
             except TagNotFoundError as e:
@@ -237,6 +237,6 @@ class TagInterface:
             tag_dict["distance"] = row.distance
             tag_dict["similarity_score"] = 1.0 / (1.0 + row.distance)
             tag = SimilarTag.model_validate(tag_dict)
-            tags.append(tag)
+            similar_tags.append(tag)
 
-        return tags
+        return similar_tags

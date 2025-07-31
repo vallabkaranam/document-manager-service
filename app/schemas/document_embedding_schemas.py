@@ -22,7 +22,7 @@ class DocumentEmbedding(BaseModel):
     
     id: UUID = Field(..., description="Unique identifier for the embedding")
     document_id: UUID = Field(..., description="ID of the document this embedding belongs to")
-    embedding: List[float] = Field(..., description="Vector representation of the document content")
+    chunk_text: str = Field(..., description="Text content of the chunk associated with the embedding")
     created_at: datetime = Field(..., description="Timestamp when the embedding was created")
     
     model_config = {

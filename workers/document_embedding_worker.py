@@ -14,7 +14,7 @@ Key Capabilities:
 - Downloads PDF documents from S3
 - Extracts text using `PyPDF2`
 - Generates embeddings using SentenceTransformer
-- Stores document-level embeddings to Postgres/pgvector
+- Stores document-level embeddings and text to Postgres/pgvector (1 doc = 1 chunk)
 - Handles and logs errors gracefully
 - Updates document's `embedding_status` field as processing progresses
 
@@ -129,7 +129,11 @@ def process_message(message_body: dict) -> None:
 
         # Step 5: Generate embedding and store in DB
         embedding_vector = embed_text(text)
-        embedding_interface.create_document_embedding(document_id=document_id, embedding_vector=embedding_vector)
+        embedding_interface.create_chunk_embedding(
+            document_id=document_id, 
+            embedding_vector=embedding_vector,
+            chunk_text=text
+            )
         print(f"✅ Stored embedding for document {document_id}.")
 
         # Step 6: Mark as completed

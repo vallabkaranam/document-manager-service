@@ -6,7 +6,7 @@ abstracting the database layer and providing clean, validated interfaces
 to the controller and route layers.
 
 Key Capabilities:
-- Create a document embedding if one does not exist
+- Create a document embedding
 - Update an existing document embedding
 - Retrieve embeddings for a specific document
 - Perform semantic similarity search using pgvector
@@ -33,9 +33,9 @@ from app.schemas.errors import (
     DocumentEmbeddingCreationError,
     DocumentEmbeddingNotFoundError,
     DocumentEmbeddingUpdateError,
-    SimilarDocumentSearchError,
+    SimilarChunkSearchError,
 )
-from app.utils.document_utils import embed_text
+from app.schemas.rag_schemas import SimilarChunk
 
 
 class DocumentEmbeddingInterface:
@@ -48,9 +48,9 @@ class DocumentEmbeddingInterface:
         """
         self.db = db
 
-    def get_by_document_id(self, document_id: str) -> DocumentEmbeddingPydantic:
+    def get_embedding_by_document_id(self, document_id: str) -> DocumentEmbeddingPydantic:
         """
-        Retrieves the document embedding by document ID.
+        Retrieves the chunk embedding by document ID.
 
         Args:
             document_id (str): UUID string of the document.
@@ -74,16 +74,46 @@ class DocumentEmbeddingInterface:
             )
 
         return DocumentEmbeddingPydantic.model_validate(embedding)
+    
+    def get_embedding_by_id(self, embedding_id: str) -> DocumentEmbeddingPydantic:
+        """
+        Retrieves a document embedding by its primary key ID.
 
-    def create_document_embedding(
-        self, document_id: str, embedding_vector: List[float]
+        Args:
+            embedding_id (str): UUID string of the embedding.
+
+        Returns:
+            DocumentEmbeddingPydantic: The embedding object.
+
+        Raises:
+            DocumentEmbeddingNotFoundError: If no embedding exists for the given ID.
+        """
+        embedding_uuid = uuid.UUID(embedding_id)
+        embedding = (
+            self.db.query(DocumentEmbedding)
+            .filter(DocumentEmbedding.id == embedding_uuid)
+            .first()
+        )
+
+        if not embedding:
+            raise DocumentEmbeddingNotFoundError(
+                f"No embedding found with id {embedding_id}"
+            )
+
+        return DocumentEmbeddingPydantic.model_validate(embedding)
+
+    
+
+    def create_chunk_embedding(
+        self, document_id: str, embedding_vector: List[float], chunk_text: str
     ) -> DocumentEmbeddingPydantic:
         """
-        Creates a new document embedding with the provided embedding vector.
+        Creates a new chunk embedding with the provided embedding vector and chunk text.
 
         Args:
             document_id (str): UUID string of the document.
             embedding_vector (List[float]): Pre-computed embedding vector.
+            chunk_text (str): Text content used to compute the embedding.
 
         Returns:
             DocumentEmbeddingPydantic: The created embedding.
@@ -112,6 +142,7 @@ class DocumentEmbeddingInterface:
             new_embedding = DocumentEmbedding(
                 document_id=document_uuid,
                 embedding=embedding_vector,
+                chunk_text=chunk_text
             )
             self.db.add(new_embedding)
             self.db.commit()
@@ -123,14 +154,15 @@ class DocumentEmbeddingInterface:
             ) from e
 
     def update_embedding(
-        self, document_id: str, embedding_vector: List[float]
+        self, document_id: str, embedding_vector: List[float], chunk_text: str
     ) -> DocumentEmbeddingPydantic:
         """
-        Updates an existing document embedding with a new embedding vector.
+        Updates an existing document embedding with a new embedding vector and chunk text.
 
         Args:
             document_id (str): UUID string of the document.
             embedding_vector (List[float]): New embedding vector.
+            chunk_text (str): Updated chunk of text associated with the embedding.
 
         Returns:
             DocumentEmbeddingPydantic: The updated embedding.
@@ -153,6 +185,7 @@ class DocumentEmbeddingInterface:
 
         try:
             existing.embedding = embedding_vector
+            existing.chunk_text = chunk_text
             self.db.commit()
             self.db.refresh(existing)
             return DocumentEmbeddingPydantic.model_validate(existing)
@@ -161,28 +194,12 @@ class DocumentEmbeddingInterface:
                 f"Failed to update embedding for document {document_id}: {str(e)}"
             ) from e
 
-    def get_similar_documents(
+    def get_similar_chunks(
         self, query_embedding: List[float], top_k: int = 5
-    ) -> List[DocumentEmbeddingPydantic]:
-        """
-        Retrieves documents most similar to the input embedding using pgvector similarity.
-
-        Args:
-            query_embedding (List[float]): The embedding to compare against.
-            top_k (int): Number of most similar documents to retrieve.
-
-        Returns:
-            List[DocumentEmbeddingPydantic]: Top-k similar documents.
-
-        Raises:
-            SimilarDocumentSearchError: If the query fails.
-
-        Notes:
-            This uses PostgreSQL + pgvector's '<->' operator for L2 distance sorting.
-        """
+    ) -> List[SimilarChunk]:
         sql = text(
             """
-            SELECT id, document_id, embedding, created_at, embedding <-> (:query_vector)::vector AS distance
+            SELECT id, embedding <-> (:query_vector)::vector AS distance
             FROM document_embeddings
             WHERE embedding IS NOT NULL
             ORDER BY embedding <-> (:query_vector)::vector
@@ -195,21 +212,23 @@ class DocumentEmbeddingInterface:
                 sql, {"query_vector": query_embedding, "top_k": top_k}
             ).fetchall()
         except Exception as e:
-            raise SimilarDocumentSearchError(
+            raise SimilarChunkSearchError(
                 f"Error while fetching similar documents: {str(e)}"
             ) from e
 
-        similar = []
+        similar_chunks = []
+
         for row in results:
             try:
-                embedding = DocumentEmbeddingPydantic(
-                    id=row.id,
-                    document_id=row.document_id,
-                    embedding=row.embedding,
-                    created_at=row.created_at,
-                )
-                similar.append(embedding)
-            except Exception:
-                continue  # Skip malformed rows
+                chunk_obj = self.get_embedding_by_id(str(row.id))
+                chunk_dict = chunk_obj.model_dump()
+                chunk_dict["distance"] = row.distance
+                chunk_dict["similarity_score"] = 1.0 / (1.0 + row.distance)
 
-        return similar
+                similar_chunk = SimilarChunk.model_validate(chunk_dict)
+                similar_chunks.append(similar_chunk)
+            except Exception as e:
+                print(f"Skipping malformed row: {row}\nError: {e}")
+                continue
+
+        return similar_chunks

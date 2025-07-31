@@ -82,6 +82,6 @@ class DocumentEmbeddingUpdateError(Exception):
     """Raised when updating a document embedding fails."""
     pass
 
-class SimilarDocumentSearchError(Exception):
-    """Raised when searching for similar documents using embeddings fails."""
+class SimilarChunkSearchError(Exception):
+    """Raised when searching for similar chunks using embeddings fails."""
     pass

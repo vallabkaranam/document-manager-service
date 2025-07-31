@@ -13,3 +13,9 @@ class OpenAISummaryResponse(BaseModel):
     token_usage: TokenUsage = Field(..., description="Token usage information")
     model: str = Field(..., description="The OpenAI model used for generation")
     created: datetime = Field(..., description="Timestamp when the summary was created")
+
+class OpenAIRAGAnswerResponse(BaseModel):
+    answer: str = Field(..., description="The generated answer text")
+    token_usage: TokenUsage = Field(..., description="Token usage information")
+    model: str = Field(..., description="The OpenAI model used for generation")
+    created: datetime = Field(..., description="Timestamp when the answer was created")
