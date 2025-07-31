@@ -119,7 +119,7 @@ def get_document_controller(
 # Route Definitions
 # --------------------------
 
-@router.get("/documents", response_model=DocumentsResponse)
+@router.get("/documents", response_model=DocumentsResponse, operation_id="get_documents_by_user", summary="Get all documents by user ID")
 async def get_documents_by_user_id(user_id: int, document_controller: DocumentController = Depends(get_document_controller)) -> DocumentsResponse:
     """
     Retrieve all documents uploaded by a specific user.
@@ -142,7 +142,7 @@ async def get_documents_by_user_id(user_id: int, document_controller: DocumentCo
         raise HTTPException(status_code=500, detail=f"Unable to get documents by user id: {str(e)}")
 
 
-@router.get("/tags/{tag_id}/documents", response_model=DocumentsResponse)
+@router.get("/tags/{tag_id}/documents", response_model=DocumentsResponse, operation_id="get_documents_by_tag", summary="Get all documents by tag ID")
 async def get_documents_by_tag_id(tag_id: str, document_controller: DocumentController = Depends(get_document_controller)) -> DocumentsResponse:
     """
     Retrieve all documents associated with a given tag ID.
@@ -162,7 +162,7 @@ async def get_documents_by_tag_id(tag_id: str, document_controller: DocumentCont
         raise HTTPException(status_code=500, detail=f"Unable to get documents for tag with id {tag_id}: {str(e)}")
 
 
-@router.get("/documents/{document_id}", response_model=Document)
+@router.get("/documents/{document_id}", response_model=Document, operation_id="get_document_by_id", summary="Get document metadata by ID")
 async def get_document_by_id(document_id: str, document_controller: DocumentController = Depends(get_document_controller)) -> Document:
     """
     Retrieve metadata for a specific document by ID.
@@ -182,7 +182,7 @@ async def get_document_by_id(document_id: str, document_controller: DocumentCont
         raise HTTPException(status_code=500, detail=f"Unable to get document by id: {str(e)}")
 
 
-@router.get("/documents/{document_id}/view")
+@router.get("/documents/{document_id}/view", operation_id="get_document_presigned_url", summary="Get presigned URL for viewing a document")
 async def view_document_by_id(document_id: str, document_controller: DocumentController = Depends(get_document_controller)) -> str:
     """
     Generate and return a presigned URL for viewing the document.
@@ -201,7 +201,7 @@ async def view_document_by_id(document_id: str, document_controller: DocumentCon
         raise HTTPException(status_code=500, detail=f"Unable to get presigned url for document: {str(e)}")
 
 
-@router.post("/documents", response_model=Document)
+@router.post("/documents", response_model=Document, operation_id="upload_document", summary="Upload a new document")
 async def upload_document(
     file: UploadFile = File(...),
     filename: Optional[str] = Form(None),
@@ -234,7 +234,7 @@ async def upload_document(
         raise HTTPException(status_code=500, detail=f"Error while uploading document: {str(e)}")
 
 
-@router.patch("/documents/{document_id}", response_model=Document)
+@router.patch("/documents/{document_id}", response_model=Document, operation_id="update_document", summary="Update document metadata")
 async def update_document(document_id: str, update_data: DocumentUpdate, document_controller: DocumentController = Depends(get_document_controller)) -> Document:
     """
     Partially update document metadata.
@@ -255,7 +255,7 @@ async def update_document(document_id: str, update_data: DocumentUpdate, documen
         raise HTTPException(status_code=500, detail=f"Failed to update document: {str(e)}")
 
 
-@router.delete("/documents/{document_id}", response_model=Document)
+@router.delete("/documents/{document_id}", response_model=Document, operation_id="delete_document", summary="Delete a document")
 async def delete_document(document_id: str, document_controller: DocumentController = Depends(get_document_controller)) -> Document:
     """
     Delete a document and return its metadata.
@@ -279,7 +279,7 @@ async def delete_document(document_id: str, document_controller: DocumentControl
         raise HTTPException(status_code=500, detail=f"Failed to delete document: {str(e)}")
 
 
-@router.post("/documents/{document_id}/tags/{tag_id}", response_model=DocumentTag)
+@router.post("/documents/{document_id}/tags/{tag_id}", response_model=DocumentTag, operation_id="associate_document_tag", summary="Associate a document with a tag")
 async def associate_document_and_tag(document_id: str, tag_id: str, document_controller: DocumentController = Depends(get_document_controller)) -> DocumentTag:
     """
     Associate a document with a tag.
@@ -300,7 +300,7 @@ async def associate_document_and_tag(document_id: str, tag_id: str, document_con
         raise HTTPException(status_code=500, detail=f"Failed to associate document {document_id} with tag {tag_id}: {str(e)}")
 
 
-@router.delete("/documents/{document_id}/tags/{tag_id}", response_model=DocumentTag)
+@router.delete("/documents/{document_id}/tags/{tag_id}", response_model=DocumentTag, operation_id="unassociate_document_tag", summary="Remove association between document and tag")
 async def unassociate_document_and_tag(document_id: str, tag_id: str, document_controller: DocumentController = Depends(get_document_controller)) -> DocumentTag:
     """
     Remove the association between a document and a tag.
@@ -325,7 +325,7 @@ async def unassociate_document_and_tag(document_id: str, tag_id: str, document_c
         raise HTTPException(status_code=500, detail=f"Failed to unassociate document {document_id} with tag {tag_id}: {str(e)}")
 
 
-@router.get("/documents/{document_id}/summarize", response_model=Summary)
+@router.get("/documents/{document_id}/summarize", response_model=Summary, operation_id="summarize_document", summary="Generate a summary for the document")
 async def summarize_document_by_document_id(document_id: str, document_controller: DocumentController = Depends(get_document_controller)) -> Summary:
     """
     Generate a natural language summary for a document.
@@ -349,7 +349,7 @@ async def summarize_document_by_document_id(document_id: str, document_controlle
         raise HTTPException(status_code=500, detail=f"Failed to summarize document {document_id}: {str(e)}")
 
 
-@router.post("/documents/search", response_model=DocumentsSearchResponse)
+@router.post("/documents/search", response_model=DocumentsSearchResponse, operation_id="search_documents", summary="Search documents by semantic similarity")
 def search_for_documents(body: DocumentsSearchRequest, document_controller: DocumentController = Depends(get_document_controller)) -> DocumentsSearchResponse:
     """
     Semantic search across documents using tags and embeddings.

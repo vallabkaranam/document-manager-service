@@ -57,7 +57,12 @@ def get_rag_controller(
 # Route Definitions
 # --------------------------
 
-@router.post("/query", response_model=RAGQueryResponse)
+@router.post(
+    "/query",
+    response_model=RAGQueryResponse,
+    operation_id="rag_query_documents",
+    summary="Query documents using RAG (Retrieval-Augmented Generation)"
+)
 async def handle_query(
     request: RAGQueryRequest,
     rag_controller: RAGController = Depends(get_rag_controller)

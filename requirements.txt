@@ -1,5 +1,6 @@
 # === Core Framework ===
 fastapi
+fastapi_mcp
 uvicorn[standard]
 
 # === Database & ORM ===

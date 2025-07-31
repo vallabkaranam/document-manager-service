@@ -60,7 +60,12 @@ def get_tag_controller(
 # Route Definitions
 # --------------------------
 
-@router.get("/tags", response_model=TagsResponse)
+@router.get(
+    "/tags",
+    response_model=TagsResponse,
+    operation_id="get_all_tags",
+    summary="Retrieve all tags"
+)
 async def get_all_tags(tag_controller: TagController = Depends(get_tag_controller)) -> TagsResponse:
     """
     Retrieve all tags in the system.
@@ -84,7 +89,12 @@ async def get_all_tags(tag_controller: TagController = Depends(get_tag_controlle
         )
 
 
-@router.get("/documents/{document_id}/tags", response_model=TagsResponse)
+@router.get(
+    "/documents/{document_id}/tags",
+    response_model=TagsResponse,
+    operation_id="get_tags_by_document",
+    summary="Retrieve tags for a document"
+)
 async def get_tags_by_document_id(document_id: str, tag_controller: TagController = Depends(get_tag_controller)) -> TagsResponse:
     """
     Retrieve all tags associated with a given document.
@@ -110,7 +120,12 @@ async def get_tags_by_document_id(document_id: str, tag_controller: TagControlle
         )
 
 
-@router.post("/tags", response_model=Tag)
+@router.post(
+    "/tags",
+    response_model=Tag,
+    operation_id="create_tag",
+    summary="Create a new tag"
+)
 async def create_tag(
     tag_request: CreateTagRequest,
     tag_controller: TagController = Depends(get_tag_controller)
@@ -143,7 +158,12 @@ async def create_tag(
         )
 
 
-@router.delete("/tags/{tag_id}", response_model=Tag)
+@router.delete(
+    "/tags/{tag_id}",
+    response_model=Tag,
+    operation_id="delete_tag",
+    summary="Delete a tag by ID"
+)
 async def delete_tag(
     tag_id: str,
     tag_controller: TagController = Depends(get_tag_controller)    
@@ -173,7 +193,12 @@ async def delete_tag(
         )
 
 
-@router.get("/tags/{tag_id}", response_model=Tag)
+@router.get(
+    "/tags/{tag_id}",
+    response_model=Tag,
+    operation_id="get_tag_by_id",
+    summary="Get tag metadata by ID"
+)
 async def get_tag_by_id(
     tag_id: str,
     tag_controller: TagController = Depends(get_tag_controller)
@@ -199,7 +224,12 @@ async def get_tag_by_id(
         )
 
 
-@router.patch("/tags/{tag_id}", response_model=Tag)
+@router.patch(
+    "/tags/{tag_id}",
+    response_model=Tag,
+    operation_id="update_tag",
+    summary="Update tag metadata"
+)
 async def update_tag(tag_id: str, update_data: TagUpdate, tag_controller: TagController = Depends(get_tag_controller)) -> Tag:
     """
     Partially update tag metadata (e.g., text).
