@@ -57,3 +57,6 @@ class DocumentUpdate(BaseModel):
     embedding_status: Optional[EmbeddingStatusEnum] = Field(None, description="Current status of document embedding")
     embedding_status_updated_at: Optional[datetime] = Field(None, description="Timestamp when the embedding status was last updated")
     updated_at: Optional[datetime] = Field(None, description="Timestamp when the document was last updated")
+
+class PresignedURLResponse(BaseModel):
+    url: str

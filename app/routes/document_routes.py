@@ -42,6 +42,7 @@ from app.schemas.document_schemas import (
     DocumentsResponse,
     DocumentsSearchRequest,
     DocumentsSearchResponse,
+    PresignedURLResponse,
     UploadDocumentRequest,
     DocumentUpdate
 )
@@ -182,8 +183,16 @@ async def get_document_by_id(document_id: str, document_controller: DocumentCont
         raise HTTPException(status_code=500, detail=f"Unable to get document by id: {str(e)}")
 
 
-@router.get("/documents/{document_id}/view", operation_id="get_document_presigned_url", summary="Get presigned URL for viewing a document")
-async def view_document_by_id(document_id: str, document_controller: DocumentController = Depends(get_document_controller)) -> str:
+@router.get(
+    "/documents/{document_id}/view",
+    operation_id="get_document_presigned_url",
+    summary="Get presigned URL for viewing a document",
+    response_model=PresignedURLResponse
+)
+async def view_document_by_id(
+    document_id: str,
+    document_controller: DocumentController = Depends(get_document_controller)
+) -> PresignedURLResponse:
     """
     Generate and return a presigned URL for viewing the document.
 
@@ -191,14 +200,18 @@ async def view_document_by_id(document_id: str, document_controller: DocumentCon
         document_id (str): UUID of the document.
 
     Returns:
-        str: A time-limited S3 URL to access the document.
+        PresignedURLResponse: A time-limited S3 URL to access the document.
     """
     try:
-        return document_controller.view_document_by_id(document_id)
+        url = document_controller.view_document_by_id(document_id)
+        return PresignedURLResponse(url=url)
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unable to get presigned url for document: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Unable to get presigned url for document: {str(e)}"
+        )
 
 
 @router.post("/documents", response_model=Document, operation_id="upload_document", summary="Upload a new document")
