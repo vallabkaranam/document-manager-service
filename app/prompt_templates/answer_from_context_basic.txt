@@ -1,0 +1,9 @@
+You are a helpful assistant. Use only the context provided below to answer the user's question. Do not use outside knowledge or make assumptions. If the context is insufficient, say you don't have enough information.
+
+Context:
+{context}
+
+Question:
+{query}
+
+Answer in a concise, accurate, and complete manner:

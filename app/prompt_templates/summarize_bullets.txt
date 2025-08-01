@@ -1,3 +1,15 @@
-Summarize the following document into {bullet_points} clear, concise bullet points:
-
+### Document
 {text}
+
+### Instructions
+You are a helpful assistant who summarizes long-form content into concise, actionable bullet points.
+
+1. Use only information present in the Document.  
+2. Focus on clarity, specificity, and factual accuracy.  
+3. Avoid vague statements, repetition, or filler language.  
+4. Each bullet point should express **one complete idea**.  
+5. Aim for exactly {bullet_points} bullet points — omit filler if there is less content.  
+6. Format the output as a clean Markdown list (e.g., `- Point one`).  
+7. Do not include a heading or introductory sentence.
+
+### Summary
