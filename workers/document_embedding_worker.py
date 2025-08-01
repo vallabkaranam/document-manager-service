@@ -3,8 +3,9 @@ SQS Document Embedding Worker
 
 This module runs a long-lived polling worker that consumes document-embedding requests from an
 AWS SQS queue. Each message contains the document ID and metadata. The worker downloads the
-document from S3, extracts its text, generates a dense vector embedding using a SentenceTransformer
-model, and stores the embedding in the database linked to the corresponding document.
+document from S3, extracts its text, applies transformation steps (cleaning and tagging), generates
+a dense vector embedding using a SentenceTransformer model, and stores the embedding in the
+database linked to the corresponding document.
 
 Usage:
     $ python sqs_embedding_worker.py
@@ -13,6 +14,7 @@ Key Capabilities:
 - Polls SQS for new messages (max 5 at a time)
 - Downloads PDF documents from S3
 - Extracts text using `PyPDF2`
+- Transforms text via normalization and lightweight section tagging
 - Generates embeddings using SentenceTransformer
 - Stores document-level embeddings and text to Postgres/pgvector (1 doc = 1 chunk)
 - Handles and logs errors gracefully
@@ -40,7 +42,12 @@ from app.interfaces.document_interface import DocumentInterface
 from app.interfaces.document_embedding_interface import DocumentEmbeddingInterface
 from app.interfaces.s3_interface import S3Interface, S3DownloadError
 from app.ml_models.embedding_models import shared_sentence_model
-from app.utils.document_utils import extract_text_from_pdf, embed_text
+from app.utils.document_utils import (
+    extract_text_from_pdf,
+    clean_and_normalize_text,
+    tag_sections,
+    embed_text,
+)
 from app.schemas.errors import DocumentNotFoundError, DocumentUpdateError
 
 QUEUE_URL = os.getenv("EMBEDDING_SQS_QUEUE_URL")
@@ -53,6 +60,7 @@ s3_interface = S3Interface(os.getenv("S3_BUCKET_NAME"))
 def process_message(message_body: dict) -> None:
     """
     Core business logic for processing a single document embedding request.
+    Applies extraction, transformation (normalization + tagging), and embedding.
     """
     db: Session = SessionLocal()
     document_interface = DocumentInterface(db)
@@ -127,16 +135,20 @@ def process_message(message_body: dict) -> None:
                 print(f"❌ Error marking empty-text document as skipped: {str(e)}")
             return
 
-        # Step 5: Generate embedding and store in DB
-        embedding_vector = embed_text(text)
+        # Step 5: Transform text
+        clean_text = clean_and_normalize_text(text)
+        tagged_text = tag_sections(clean_text)
+
+        # Step 6: Generate embedding and store in DB
+        embedding_vector = embed_text(tagged_text)
         embedding_interface.create_chunk_embedding(
             document_id=document_id, 
             embedding_vector=embedding_vector,
-            chunk_text=text
-            )
+            chunk_text=tagged_text,
+        )
         print(f"✅ Stored embedding for document {document_id}.")
 
-        # Step 6: Mark as completed
+        # Step 7: Mark as completed
         try:
             document_interface.update_document(
                 document_id,

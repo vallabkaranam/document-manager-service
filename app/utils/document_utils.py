@@ -10,6 +10,8 @@ generate metadata, and prepare content for ML pipelines and semantic search.
 
 Key Capabilities:
 - Extract clean text from uploaded PDF files
+- Normalize and clean text for better embedding quality
+- Add lightweight XML-style section tags to enhance structure
 - Generate tags using KeyBERT with maxsum similarity
 - Sanitize and generate unique filenames to prevent S3 overwrites
 - Generate vector embeddings using SentenceTransformer
@@ -77,6 +79,71 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
         return text.strip()
     except Exception:
         return ""
+
+
+def clean_and_normalize_text(text: str) -> str:
+    """
+    Cleans and normalizes text for embedding.
+
+    - Removes non-printable characters
+    - Normalizes whitespace and line breaks
+    - Replaces special bullet symbols with a standard dash
+
+    Args:
+        text (str): Raw extracted text.
+
+    Returns:
+        str: Cleaned and normalized text ready for embedding.
+    """
+    text = re.sub(r"[^\x20-\x7E\n\t]", "", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    text = re.sub(r"[•·▪→]", "-", text)
+    return text
+
+
+def tag_sections(text: str) -> str:
+    """
+    Tags likely section headers and wraps content in <section> blocks.
+
+    - Lines in ALL CAPS or Title Case treated as headers
+    - Sections are wrapped in:
+        <section>
+          <header>...</header>
+          <body>...</body>
+        </section>
+
+    Args:
+        text (str): Cleaned or raw text.
+
+    Returns:
+        str: Text with lightweight structural tagging applied.
+    """
+    lines = text.split('\n')
+    sections = []
+    current_section = {"header": None, "body": []}
+
+    for line in lines:
+        stripped = line.strip()
+        if re.match(r"^[A-Z\s:]{5,}$", stripped):  # ALL CAPS headings
+            if current_section["header"] or current_section["body"]:
+                sections.append(current_section)
+                current_section = {"header": None, "body": []}
+            current_section["header"] = stripped
+        else:
+            current_section["body"].append(stripped)
+
+    if current_section["header"] or current_section["body"]:
+        sections.append(current_section)
+
+    tagged_text = ""
+    for sec in sections:
+        tagged_text += "<section>\n"
+        if sec["header"]:
+            tagged_text += f"  <header>{sec['header']}</header>\n"
+        tagged_text += f"  <body>{' '.join(sec['body'])}</body>\n"
+        tagged_text += "</section>\n"
+
+    return tagged_text.strip()
 
 
 def sanitize_filename(filename: str) -> str:
