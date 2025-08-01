@@ -6,8 +6,8 @@ uvicorn[standard]
 # === Database & ORM ===
 sqlalchemy
 alembic
-psycopg2-binary
-pgvector
+psycopg2-binary  # stable PostgreSQL client
+pgvector  # includes SQLAlchemy integration
 
 # === Environment Configuration ===
 python-dotenv
@@ -15,5 +15,21 @@ python-dotenv
 # === File Uploads ===
 python-multipart
 
+# === AWS SDK ===
+boto3
+
+# === NLP & Embeddings ===
+sentence-transformers
+keybert
+
+# === PDF Parsing ===
+PyPDF2
+
 # === HTTP Requests ===
 httpx
+
+# === OpenAI Integration ===
+openai
+
+# === Caching ===
+redis
