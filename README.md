@@ -208,3 +208,7 @@ This service is MCP-ready:
 ```bash
 pytest -v
 ```
+
+---
+
+Notes: https://docs.google.com/document/d/1nVzS1SENox6ixrojukMD-oONYXx6V064gQjAOht2qXU/edit?usp=sharing
