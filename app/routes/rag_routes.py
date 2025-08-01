@@ -21,6 +21,7 @@ Assumptions:
 from fastapi import APIRouter, Depends, HTTPException
 from app.controllers.rag_controller import RAGController
 from app.interfaces.document_embedding_interface import DocumentEmbeddingInterface
+from app.interfaces.document_interface import DocumentInterface
 from app.interfaces.openai_interface import OpenAIInterface
 from app.db.session import get_db
 from sqlalchemy.orm import Session
@@ -41,6 +42,10 @@ def get_tag_interface(db: Session = Depends(get_db)) -> TagInterface:
     """Injects the tag DB interface."""
     return TagInterface(db)
 
+def get_document_interface(db: Session = Depends(get_db)) -> DocumentInterface:
+    """Injects the document DB interface."""
+    return DocumentInterface(db)
+
 def get_openai_interface() -> OpenAIInterface:
     """Injects the OpenAI API interface for summarization."""
     return OpenAIInterface()
@@ -48,10 +53,11 @@ def get_openai_interface() -> OpenAIInterface:
 def get_rag_controller(
     document_embedding_interface: DocumentEmbeddingInterface = Depends(get_document_embedding_interface),
     tag_interface: TagInterface = Depends(get_tag_interface),
+    document_interface: DocumentInterface = Depends(get_document_interface),
     openai_interface: OpenAIInterface = Depends(get_openai_interface)
 ) -> RAGController:
     """Constructs the RAGController with necessary interfaces."""
-    return RAGController(document_embedding_interface, tag_interface, openai_interface)
+    return RAGController(document_embedding_interface, tag_interface, document_interface, openai_interface)
 
 # --------------------------
 # Route Definitions
@@ -82,7 +88,7 @@ async def handle_query(
         - Constructs a prompt and invokes the LLM to generate a grounded response.
     """
     try:
-        response = await rag_controller.handle_query(request)
+        response = await rag_controller.handle_query_optimized(request)
         return response
     except HTTPException as e:
         raise e

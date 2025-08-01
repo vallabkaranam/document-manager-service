@@ -10,7 +10,7 @@ class SimilarChunk(DocumentEmbedding):
 class RAGQueryRequest(BaseModel):
     query: str = Field(..., description="Natural language question or prompt for the RAG system")
     top_k: int = Field(5, description="Number of top relevant chunks to retrieve")
-    include_tags: bool = Field(False, description="Whether to include document-level tags in prompt context")
+    include_tags: bool = Field(True, description="Whether to include document-level tags in prompt context")
 
 class RAGQueryResponse(BaseModel):
     query: str = Field(..., description="Original user query for which the response was generated")
