@@ -166,6 +166,12 @@ class RAGController:
                     context_chunks=[]
                 )
 
+            # TODO: Currently, all chunks from tag-linked documents are included in the context without filtering.
+            # This assumes the tagging workflow is highly accurate and comprehensive.
+            # To improve relevance and reduce noise, we can consider scoring these tag-linked chunks by cosine similarity to the query,
+            # then selecting the top-k or applying a similarity threshold.
+            # This would ensure richer and more focused context for generation while keeping token usage efficient.
+
             # Step 4: Build context from chunks
             context = "\n\n".join(chunk.chunk_text for chunk in all_chunks)
 
