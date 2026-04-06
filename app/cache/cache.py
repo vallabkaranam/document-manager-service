@@ -2,6 +2,7 @@ import json
 import inspect
 import asyncio
 from typing import Any, Callable, Awaitable, Optional, Union
+from redis.exceptions import RedisError
 from redis import Redis
 
 # Type hint for a sync or async fallback function
@@ -14,7 +15,7 @@ class Cache:
     and handles serialization of Pydantic models, UUIDs, and datetimes.
     """
 
-    def __init__(self, client: Redis):
+    def __init__(self, client: Optional[Redis]):
         """
         Initialize the Cache instance with a Redis client.
         """
@@ -24,7 +25,14 @@ class Cache:
         """
         Retrieve a cached value from Redis and deserialize it from JSON.
         """
-        value = self.client.get(key)
+        if self.client is None:
+            return None
+
+        try:
+            value = self.client.get(key)
+        except RedisError:
+            return None
+
         if value is None:
             return None
         return json.loads(value)
@@ -43,13 +51,25 @@ class Cache:
 
         # Use default=str to handle UUID, datetime, etc.
         serialized = json.dumps(value, default=str)
-        self.client.set(key, serialized, ex=ttl)
+        if self.client is None:
+            return
+
+        try:
+            self.client.set(key, serialized, ex=ttl)
+        except RedisError:
+            return
 
     def delete(self, key: str) -> None:
         """
         Delete a cached key from Redis.
         """
-        self.client.delete(key)
+        if self.client is None:
+            return
+
+        try:
+            self.client.delete(key)
+        except RedisError:
+            return
 
     async def get_or_set(
         self,

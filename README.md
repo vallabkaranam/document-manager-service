@@ -63,7 +63,7 @@ Provisioned via `InfrastructureStack` in `cdk/stack.py`:
 ```bash
 git clone https://github.com/your-org/document-manager-service
 cd document-manager-service
-python -m venv venv && source venv/bin/activate
+python3.11 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -92,7 +92,7 @@ cp .env.example .env
 You’ll need to set:
 
 - `DATABASE_URL`
-- `REDIS_URL`
+- `REDIS_URL` _(recommended; cache falls back gracefully if omitted or unavailable)_
 - `S3_BUCKET_NAME`
 - `TAGGING_SQS_QUEUE_URL`
 - `EMBEDDING_SQS_QUEUE_URL`
@@ -112,6 +112,9 @@ Base URL: `http://localhost:8000`
 
 Try `/docs` for Swagger docs.
 
+Render note:
+- This repo now includes `.python-version` to keep deployments on Python 3.11, which matches the dependency set used by `fastapi-mcp`, `torch`, and `sentence-transformers`.
+
 ---
 
 ## 🧵 Background Workers
@@ -119,8 +122,8 @@ Try `/docs` for Swagger docs.
 Start worker processes manually (or via Docker/Celery setup):
 
 ```bash
-python workers/tagging_worker.py
-python workers/embedding_worker.py
+python workers/document_tagging_worker.py
+python workers/document_embedding_worker.py
 ```
 
 Each listens to its respective SQS queue and processes documents on arrival.

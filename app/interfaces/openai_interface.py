@@ -19,17 +19,18 @@ Assumptions:
 
 from datetime import UTC, datetime
 import os
+
+from dotenv import load_dotenv
 from openai import AsyncOpenAI
+
 from app.schemas.openai_schemas import OpenAISummaryResponse, OpenAIRAGAnswerResponse, TokenUsage
-from app.utils.prompt_utils import load_prompt_template
 from app.schemas.errors import OpenAIServiceError
+from app.utils.prompt_utils import load_prompt_template
+
+load_dotenv()
 
 # Load API key and model from env
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 GPT_MODEL = os.getenv("GPT_MODEL", "gpt-3.5-turbo-0125")
-
-# Initialize the async client
-openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 class OpenAIInterface:
     """
@@ -41,8 +42,19 @@ class OpenAIInterface:
         Initializes the OpenAI interface with model and prompt template paths.
         """
         self.model = GPT_MODEL
+        self.api_key = os.getenv("OPENAI_API_KEY")
+        self._client: AsyncOpenAI | None = None
         self.summary_prompt_template_path = "app/prompt_templates/summarize_bullets.txt"
         self.rag_prompt_template_path = "app/prompt_templates/answer_from_context.txt"
+
+    def _get_client(self) -> AsyncOpenAI:
+        if not self.api_key:
+            raise OpenAIServiceError("OPENAI_API_KEY environment variable is not set.")
+
+        if self._client is None:
+            self._client = AsyncOpenAI(api_key=self.api_key)
+
+        return self._client
 
     async def summarize_text(self, text: str, bullet_points: int = 5, max_tokens: int = 500) -> OpenAISummaryResponse:
         """
@@ -68,7 +80,7 @@ class OpenAIInterface:
             prompt = prompt_template.format(text=text, bullet_points=bullet_points)
 
             # Call OpenAI async chat completion
-            response = await openai_client.chat.completions.create(
+            response = await self._get_client().chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": "You are a helpful assistant that summarizes documents."},
@@ -124,7 +136,7 @@ class OpenAIInterface:
             prompt_template = load_prompt_template(self.rag_prompt_template_path)
             prompt = prompt_template.format(query=query, context=context)
 
-            response = await openai_client.chat.completions.create(
+            response = await self._get_client().chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": "You are a helpful assistant that only answers based on provided context."},

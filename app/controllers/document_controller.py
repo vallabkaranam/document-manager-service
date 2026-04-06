@@ -41,7 +41,6 @@ from app.schemas.errors import (
     DocumentCreationError, DocumentDeletionError, DocumentNotFoundError, DocumentTagLinkError, DocumentTagNotFoundError, DocumentUpdateError, SimilarTagSearchError, TagNotFoundError,
     OpenAIServiceError, EventBridgeEmitError, S3PresignedUrlError, S3UploadError, SummaryCreationError
 )
-from app.ml_models.embedding_models import shared_sentence_model
 import httpx
 
 from app.schemas.document_schemas import Document, DocumentUpdate, DocumentsSearchRequest, DocumentsSearchResponse, UploadDocumentRequest
@@ -82,7 +81,6 @@ class DocumentController:
         self.summary_interface = summary_interface
         self.tag_interface = tag_interface
         self.cache = cache
-        self.model = shared_sentence_model
 
 
     def upload_document(self, file: UploadFile, document_input: UploadDocumentRequest) -> Document:

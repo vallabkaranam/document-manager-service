@@ -29,7 +29,7 @@ from datetime import datetime
 from typing import List
 
 from PyPDF2 import PdfReader
-from app.ml_models.embedding_models import shared_keybert_model, shared_sentence_model
+from app.ml_models.embedding_models import get_keybert_model, get_sentence_model
 
 
 def extract_tags(text: str, num_tags: int = 5) -> List[str]:
@@ -50,7 +50,7 @@ def extract_tags(text: str, num_tags: int = 5) -> List[str]:
     # - stop_words='english': Removes common words (like 'the', 'is', 'and') so only meaningful words/phrases are considered.
     # - use_maxsum=True: Ensures the selected keywords are not only relevant but also as different from each other as possible (avoids repetitive keywords).
     # - keyphrase_ngram_range=(1, 2): Allows extraction of both single words and short phrases (e.g., 'apple', 'apple pie').
-    keywords = shared_keybert_model.extract_keywords(
+    keywords = get_keybert_model().extract_keywords(
         text,
         keyphrase_ngram_range=(1, 2),
         stop_words='english',
@@ -207,4 +207,4 @@ def embed_text(text: str) -> List[float]:
     Returns:
         List[float]: Embedding vector as a list of floats.
     """
-    return shared_sentence_model.encode(text).tolist()
+    return get_sentence_model().encode(text).tolist()

@@ -41,7 +41,6 @@ from app.schemas.document_schemas import DocumentUpdate
 from app.interfaces.document_interface import DocumentInterface
 from app.interfaces.document_embedding_interface import DocumentEmbeddingInterface
 from app.interfaces.s3_interface import S3Interface, S3DownloadError
-from app.ml_models.embedding_models import shared_sentence_model
 from app.utils.document_utils import (
     extract_text_from_pdf,
     clean_and_normalize_text,
@@ -65,7 +64,6 @@ def process_message(message_body: dict) -> None:
     db: Session = SessionLocal()
     document_interface = DocumentInterface(db)
     embedding_interface = DocumentEmbeddingInterface(db)
-    model = shared_sentence_model
 
     try:
         document_id = message_body["document_id"]
