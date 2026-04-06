@@ -9,6 +9,9 @@ from sqlalchemy.orm import Session, sessionmaker
 
 load_dotenv()
 
+POSTGRES_CONNECT_TIMEOUT_SECONDS = 10
+POSTGRES_POOL_RECYCLE_SECONDS = 300
+
 
 class MissingDatabaseConfigurationError(RuntimeError):
     """Raised when DATABASE_URL is required but not configured."""
@@ -36,9 +39,36 @@ def get_database_url() -> str:
     return database_url
 
 
+def get_engine_kwargs(database_url: str) -> dict:
+    parsed_url = make_url(database_url)
+
+    if not parsed_url.drivername.startswith("postgresql"):
+        return {}
+
+    query = dict(parsed_url.query)
+    connect_args = {}
+
+    if "connect_timeout" not in query:
+        connect_args["connect_timeout"] = POSTGRES_CONNECT_TIMEOUT_SECONDS
+
+    # Render Postgres can drop pooled SSL connections after idle periods.
+    # These settings make the pool validate and recycle connections before reuse.
+    engine_kwargs = {
+        "pool_pre_ping": True,
+        "pool_recycle": POSTGRES_POOL_RECYCLE_SECONDS,
+        "pool_use_lifo": True,
+    }
+
+    if connect_args:
+        engine_kwargs["connect_args"] = connect_args
+
+    return engine_kwargs
+
+
 @lru_cache
 def get_engine() -> Engine:
-    return create_engine(get_database_url())
+    database_url = get_database_url()
+    return create_engine(database_url, **get_engine_kwargs(database_url))
 
 
 @lru_cache
